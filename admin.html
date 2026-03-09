@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Decision Scorecard | digiSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
+    .admin-title { font-family: var(--font-display); font-size: 1.8rem; color: var(--navy); text-align: center; margin-bottom: 8px; }
+    .admin-sub { text-align: center; color: var(--slate); font-size: .9rem; margin-bottom: 24px; }
+    .code-inputs { display: flex; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
+    .code-group { flex: 1; min-width: 280px; }
+    .code-group label { display: block; font-family: var(--font-display); font-weight: 700; color: var(--navy); margin-bottom: 6px; font-size: .9rem; }
+    .code-group input {
+      width: 100%; padding: 12px 16px; font-family: var(--font-mono); font-size: 1rem;
+      letter-spacing: 2px; border: 2px solid var(--divider); border-radius: 3px; outline: none;
+      text-transform: uppercase;
+    }
+    .code-group input:focus { border-color: var(--navy); }
+    .code-error { color: var(--red); font-size: .8rem; margin-top: 4px; min-height: 1.2em; }
+    .admin-actions { text-align: center; margin-bottom: 30px; }
+    .admin-lock { text-align: center; margin: 60px 0; }
+    .admin-lock-title { font-family: var(--font-display); font-size: 1.3rem; color: var(--navy); margin-bottom: 8px; }
+    .admin-lock-text { color: var(--slate); font-size: .9rem; margin-bottom: 20px; }
+    .admin-lock input {
+      padding: 12px 16px; font-family: var(--font-mono); font-size: 1.1rem;
+      letter-spacing: 3px; text-align: center; text-transform: uppercase;
+      border: 2px solid var(--divider); border-radius: 3px; outline: none; width: 240px;
+    }
+    .admin-lock input:focus { border-color: var(--navy); }
+    .admin-lock .code-error { display: block; margin-top: 8px; }
+    #admin-content { display: none; }
+    #admin-results { display: none; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="brand">digiSpace</span>
+      <span class="header-sep">|</span>
+      <span class="header-ctx">Admin — Combined Scorecard</span>
+      <span class="header-sep">|</span>
+      <span class="header-for">Dennis Smaltz</span>
+    </div>
+  </header>
+
+  <div class="admin-container">
+
+    <!-- Admin Access Gate -->
+    <div id="admin-gate" class="admin-lock">
+      <h2 class="admin-lock-title">Admin Access</h2>
+      <p class="admin-lock-text">Enter the admin code to view the combined scorecard.</p>
+      <input type="password" id="admin-code" placeholder="Admin code" maxlength="20">
+      <p class="code-error" id="admin-gate-error"></p>
+      <div style="margin-top: 16px;">
+        <button class="btn btn-primary" onclick="unlockAdmin()">Unlock</button>
+      </div>
+    </div>
+
+    <!-- Admin Content (hidden until unlocked) -->
+    <div id="admin-content">
+      <h2 class="admin-title">Combined Decision Scorecard</h2>
+      <p class="admin-sub">Paste the result codes from each partner's submission email below.</p>
+
+      <div class="code-inputs">
+        <div class="code-group">
+          <label>Danny Barcelo's Result Code</label>
+          <input type="text" id="code-danny" placeholder="D...">
+          <p class="code-error" id="error-danny"></p>
+        </div>
+        <div class="code-group">
+          <label>Benny Rodriguez's Result Code</label>
+          <input type="text" id="code-benny" placeholder="B...">
+          <p class="code-error" id="error-benny"></p>
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <button class="btn btn-primary" onclick="generateScorecard()">Generate Combined Scorecard</button>
+      </div>
+
+      <div id="admin-results">
+        <div class="gold-rule"></div>
+        <div class="score-summary" id="admin-score-summary"></div>
+        <div id="admin-factor-breakdown"></div>
+        <div class="verdict-box" id="admin-verdict-box"></div>
+        <div class="results-actions" style="margin-top: 20px;">
+          <button class="btn btn-primary" onclick="window.print()">Print / Save PDF</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="site-footer">
+    <p class="footer-sig">︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!</p>
+    <p class="footer-tag">Precision over Haste &nbsp;•&nbsp; Author: Dennis Smaltz</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    // Admin access code
+    const ADMIN_CODE = "DS2026";
+
+    function unlockAdmin() {
+      const input = document.getElementById("admin-code");
+      const error = document.getElementById("admin-gate-error");
+      if (input.value.trim().toUpperCase() === ADMIN_CODE) {
+        document.getElementById("admin-gate").style.display = "none";
+        document.getElementById("admin-content").style.display = "block";
+      } else {
+        error.textContent = "Incorrect admin code.";
+        input.value = "";
+        input.focus();
+      }
+    }
+
+    // Allow Enter key on admin gate
+    document.getElementById("admin-code").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") unlockAdmin();
+    });
+
+    function generateScorecard() {
+      const dannyCode = document.getElementById("code-danny").value.trim().toUpperCase();
+      const bennyCode = document.getElementById("code-benny").value.trim().toUpperCase();
+      const errD = document.getElementById("error-danny");
+      const errB = document.getElementById("error-benny");
+      errD.textContent = "";
+      errB.textContent = "";
+
+      // Decode
+      const dannyData = decodeResults(dannyCode);
+      const bennyData = decodeResults(bennyCode);
+
+      let hasError = false;
+      if (!dannyData || dannyData.partner !== "danny") {
+        errD.textContent = dannyCode ? "Invalid code. Must start with 'D' and contain 16 answer digits." : "Please enter Danny's result code.";
+        hasError = true;
+      }
+      if (!bennyData || bennyData.partner !== "benny") {
+        errB.textContent = bennyCode ? "Invalid code. Must start with 'B' and contain 16 answer digits." : "Please enter Benny's result code.";
+        hasError = true;
+      }
+      if (hasError) return;
+
+      // Calculate individual scores
+      const dannyScores = calculateScores(dannyData.answers);
+      const bennyScores = calculateScores(bennyData.answers);
+
+      // Combine
+      const combined = { factorScores: new Array(FACTORS.length).fill(0), factorCounts: new Array(FACTORS.length).fill(0), normalized: [] };
+      FACTORS.forEach((_, i) => {
+        combined.factorScores[i] = dannyScores.factorScores[i] + bennyScores.factorScores[i];
+        combined.factorCounts[i] = dannyScores.factorCounts[i] + bennyScores.factorCounts[i];
+      });
+      const totalRaw = combined.factorScores.reduce((a, b) => a + b, 0);
+      combined.normalized = combined.factorScores.map((s, i) => {
+        return combined.factorCounts[i] === 0 ? 0 : s / (combined.factorCounts[i] * 2);
+      });
+
+      const maxRaw = QUESTIONS.length * 2 * 2;
+      const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxRaw) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxRaw) * 50) : 50;
+      const fiftyOnePct = 100 - fiftyPct;
+
+      // Render score summary
+      document.getElementById("admin-score-summary").innerHTML = `
+        <div class="score-block fifty">
+          <div class="score-label">50/50 Split</div>
+          <div class="score-value">${fiftyPct}%</div>
+          <div class="score-unit">alignment</div>
+        </div>
+        <div class="score-block fifty-one">
+          <div class="score-label">51/49 Split</div>
+          <div class="score-value">${fiftyOnePct}%</div>
+          <div class="score-unit">alignment</div>
+        </div>
+      `;
+
+      // Factor breakdown
+      document.getElementById("admin-factor-breakdown").innerHTML = FACTORS.map((name, i) => {
+        const norm = combined.normalized[i];
+        const fiftyW = Math.max(0, norm);
+        const fiftyOneW = Math.max(0, -norm);
+        const total = fiftyW + fiftyOneW || 1;
+        const fiftyBar = (fiftyW / total) * 100;
+        const fiftyOneBar = (fiftyOneW / total) * 100;
+
+        let winnerClass, winnerLabel;
+        if (norm > 0.1) { winnerClass = "fifty"; winnerLabel = "50/50"; }
+        else if (norm < -0.1) { winnerClass = "fifty-one"; winnerLabel = "51/49"; }
+        else { winnerClass = "even"; winnerLabel = "Even"; }
+
+        const note = norm > 0.1 ? FACTOR_NOTES[i].fifty :
+                     norm < -0.1 ? FACTOR_NOTES[i].fiftyOne :
+                     "Both partners' responses suggest either structure works for this factor.";
+
+        return `
+          <div class="factor-card">
+            <div class="factor-header">
+              <span class="factor-name">${name}</span>
+              <span class="factor-winner ${winnerClass}">${winnerLabel}</span>
+            </div>
+            <div class="factor-bar">
+              <div class="bar-fifty" style="width: ${fiftyBar}%"></div>
+              <div class="bar-fifty-one" style="width: ${fiftyOneBar}%"></div>
+            </div>
+            <p class="factor-note">${note}</p>
+          </div>
+        `;
+      }).join("");
+
+      // Verdict
+      const vBox = document.getElementById("admin-verdict-box");
+      let verdictClass, verdictTitle, verdictText;
+
+      if (fiftyPct > 58) {
+        verdictClass = "fifty";
+        verdictTitle = "Combined responses lean toward a 50/50 Split";
+        verdictText = "Based on both partners' answers, the partnership values equal control, mutual veto power, and shared decision-making. A 50/50 LLC with a strong deadlock-resolution clause and detailed operating agreement would align with the partnership's preferences.";
+      } else if (fiftyOnePct > 58) {
+        verdictClass = "fifty-one";
+        verdictTitle = "Combined responses lean toward a 51/49 Split";
+        verdictText = "Based on both partners' answers, the partnership values operational speed, clear leadership, and practical decision-making. A 51/49 LLC with robust supermajority protections for the minority partner would align with the partnership's preferences.";
+      } else {
+        verdictClass = "even";
+        verdictTitle = "Combined responses suggest either structure could work";
+        verdictText = "Both partners' answers are balanced between both structures. Consider the hybrid option: 50/50 economic split (equal profits) with 51/49 governance (one partner has tiebreaker on routine decisions, but major decisions require both). This captures the best of both worlds.";
+      }
+
+      vBox.className = `verdict-box ${verdictClass}`;
+      vBox.innerHTML = `
+        <h3 class="verdict-heading">${verdictTitle}</h3>
+        <p class="verdict-text">${verdictText}</p>
+        <p class="verdict-disclaimer">This is a decision-support tool, not legal advice. Consult with independent legal counsel before finalizing your ownership structure.</p>
+      `;
+
+      document.getElementById("admin-results").style.display = "block";
+      document.getElementById("admin-results").scrollIntoView({ behavior: "smooth" });
+    }
+  </script>
+</body>
+</html>

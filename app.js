@@ -214,6 +214,13 @@ const FACTOR_NOTES = {
   7: { fifty: "Works best with high trust, equal contributions, and both partners equally active.", fiftyOne: "Better when contributions are asymmetric or one partner is the primary operator." },
 };
 
+// ─── EmailJS Configuration ───
+const EMAILJS = {
+  serviceId: "service_aq3hvcj",
+  templateId: "template_7mektik",
+  publicKey: "130PuCIb_6PfT82tZ",
+};
+
 // ─── Access Codes ───
 // Each partner has a unique access code to prevent cross-access
 const ACCESS_CODES = {
@@ -405,12 +412,48 @@ function calculateScores(answerIndices) {
   return { factorScores, factorCounts, normalized, totalRaw };
 }
 
+// ─── Result Code Encoding/Decoding ───
+// Encodes answers into a compact string: partner initial + answer indices as hex
+function encodeResults(partner, answerIndices) {
+  const prefix = partner === "danny" ? "D" : "B";
+  const hex = answerIndices.map(a => a.toString(16)).join("");
+  return prefix + hex;
+}
+
+function decodeResults(code) {
+  const partner = code[0] === "D" ? "danny" : code[0] === "B" ? "benny" : null;
+  if (!partner) return null;
+  const hex = code.slice(1);
+  const answerIndices = hex.split("").map(h => parseInt(h, 16));
+  if (answerIndices.length !== QUESTIONS.length) return null;
+  if (answerIndices.some(a => isNaN(a))) return null;
+  return { partner, answers: answerIndices };
+}
+
 // ─── Submit ───
 function submitAnswers() {
   if (answers.some(a => a === null)) return;
 
   const scores = calculateScores(answers);
   saveResults(currentPartner, { answers, scores });
+
+  // Encode result code and send via EmailJS
+  const resultCode = encodeResults(currentPartner, answers);
+  const partnerName = currentPartner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
+  const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+
+  // Send email to Dennis
+  if (typeof emailjs !== "undefined") {
+    emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+      partner_name: partnerName,
+      result_code: resultCode,
+      timestamp: timestamp,
+    }, EMAILJS.publicKey).then(
+      () => console.log("Results emailed successfully."),
+      (err) => console.warn("Email send failed:", err)
+    );
+  }
+
   showResults();
 }
 
