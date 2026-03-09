@@ -54,6 +54,9 @@ The interactive tool distills findings from four comprehensive legal research re
 ├── index.html          ← Landing page & app shell
 ├── style.css           ← Navy/gold/slate branded stylesheet
 ├── app.js              ← Questionnaire engine & scoring algorithm
+├── api/
+│   └── verify.js       ← Vercel serverless function for admin code verification
+├── vercel.json         ← Vercel routing configuration
 ├── reports/            ← PDF research reports & works cited matrices
 │   ├── 50-50 vs. 51-49 Decision Guide.pdf
 │   ├── 50-50 Joint Venture Research Report.pdf
@@ -67,20 +70,22 @@ The interactive tool distills findings from four comprehensive legal research re
 
 ## Deployment
 
-This site is designed for **GitHub Pages**. To deploy:
+This site is deployed on **Vercel** with auto-deploy on every push to `main`.
 
-1. Go to **Settings → Pages** in this repository
-2. Set Source to **Deploy from a branch**
-3. Select **main** branch, root `/`
-4. Save — the site will be live at `https://dnoice.github.io/Ownership-Structure-Decision-Guide/`
+**Live URL:** [https://ownership-decision-guide.vercel.app](https://ownership-decision-guide.vercel.app)
 
-No build step required. The site is pure HTML/CSS/JS with zero dependencies.
+The admin code is stored as a Vercel environment variable (`ADMIN_CODE`) and verified server-side via the `/api/verify` serverless function. Partner access codes remain client-side.
+
+To manage environment variables or view deploy logs, visit the [Vercel dashboard](https://vercel.com).
 
 ---
 
 ## Privacy
 
-All questionnaire responses are stored **locally in your browser** using `localStorage`. No data is transmitted to any server. Each partner's answers remain on their own device until presented together.
+All questionnaire responses are stored **locally in your browser** using `localStorage`. No data is transmitted to any server except:
+
+- **EmailJS notifications** — encoded result codes sent to the project author on submission
+- **Admin code verification** — the admin access code is validated via a server-side API call (the code is never exposed in client-side JavaScript)
 
 ---
 
