@@ -846,6 +846,15 @@ function showResults() {
   const hasBoth = both.danny && both.benny;
   const fqMap = getFactorQuestionIndices();
 
+  // Check for admin test data if no real data exists
+  const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
+  const testData = stored["_test_" + currentPartner];
+  if (!both.danny && !both.benny && !testData) {
+    alert("No results to display. Complete the questionnaire first.");
+    showScreen("landing");
+    return;
+  }
+
   // Determine which answers to analyze
   let activeAnswers; // the answer set used for insight generation
   let combinedScores;
@@ -865,13 +874,19 @@ function showResults() {
     // For insights, average the answer indices (we'll pass danny's for pattern detection)
     activeAnswers = both.danny.answers;
     subtitle = "Combined results for Danny Barcelo & Benny Rodriguez";
-  } else {
+  } else if (both.danny || both.benny) {
     const partner = both.danny ? "danny" : "benny";
     const name = partner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
     const other = partner === "danny" ? "Benny Rodriguez" : "Danny Barcelo";
     combinedScores = both[partner].scores;
     activeAnswers = both[partner].answers;
     subtitle = `Results for ${name} — waiting for ${other} to complete their questionnaire`;
+  } else {
+    // Admin test mode — use test data
+    const name = currentPartner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
+    combinedScores = testData.scores;
+    activeAnswers = testData.answers;
+    subtitle = `[Admin Test] Results for ${name}`;
   }
 
   document.getElementById("results-sub").textContent = subtitle;
