@@ -353,7 +353,7 @@ function showScreen(id) {
 
 // ─── Partner Selection (with access code verification) ───
 function selectPartner(partner) {
-  const names = { danny: "Danny Barcelo", benny: "Benny Rodriguez", admin: "Admin / Test Mode" };
+  const names = { danny: "Danny Barcelo", benny: "Benny Rodriguez", admin: "Admin Mode" };
   const name = names[partner] || partner;
   const isAdmin = partner === "admin";
 
@@ -367,19 +367,6 @@ function selectPartner(partner) {
         ? "Enter your admin code to test the questionnaire. Submissions in this mode are tagged as test runs and do not affect client results."
         : `Enter your personal access code to continue as <strong>${name}</strong>.`
       }</p>
-      ${isAdmin ? `
-        <p class="access-text" style="margin-top:8px; font-size:.85rem; color:var(--slate);">
-          <strong>Test as:</strong>
-        </p>
-        <div class="access-actions" style="margin-bottom:12px; justify-content:center;">
-          <label style="font-size:.85rem; cursor:pointer; margin-right:16px;">
-            <input type="radio" name="admin-as" value="danny" checked> Danny
-          </label>
-          <label style="font-size:.85rem; cursor:pointer;">
-            <input type="radio" name="admin-as" value="benny"> Benny
-          </label>
-        </div>
-      ` : ""}
       <input type="text" id="access-input" class="access-input" placeholder="Enter access code" maxlength="10" autocomplete="off">
       <p class="access-error" id="access-error"></p>
       <div class="access-actions">
@@ -387,7 +374,7 @@ function selectPartner(partner) {
         <button class="btn btn-primary" onclick="verifyCode('${partner}')">Verify</button>
       </div>
       <p class="access-hint">${isAdmin
-        ? "Use your admin code (DS2026)."
+        ? "Enter the admin code provided during setup."
         : "Your access code was provided by Dennis Smaltz.<br>Contact him if you don't have it."
       }</p>
     </div>
@@ -411,12 +398,9 @@ function verifyCode(partner) {
 
   if (partner === "admin") {
     if (code === ACCESS_CODES.admin.toUpperCase()) {
-      // Determine which partner to test as
-      const radioEl = document.querySelector('input[name="admin-as"]:checked');
-      const testAs = radioEl ? radioEl.value : "danny";
+      // Code verified — now show partner selection
       closeAccessModal();
-      isAdminTest = true;
-      startQuestionnaire(testAs);
+      showAdminPartnerSelect();
     } else {
       error.textContent = "Incorrect admin code.";
       input.value = "";
@@ -443,6 +427,31 @@ function verifyCode(partner) {
 function closeAccessModal() {
   const overlay = document.getElementById("access-overlay");
   if (overlay) overlay.remove();
+}
+
+function showAdminPartnerSelect() {
+  const overlay = document.createElement("div");
+  overlay.id = "access-overlay";
+  overlay.innerHTML = `
+    <div class="access-modal">
+      <h3 class="access-title">Admin Mode</h3>
+      <p class="access-text">Select which partner's questionnaire you'd like to test:</p>
+      <div class="access-actions" style="flex-direction:column; gap:10px; margin-top:16px;">
+        <button class="btn btn-primary" onclick="adminStartAs('danny')" style="width:100%;">Test as Danny Barcelo</button>
+        <button class="btn btn-secondary" onclick="adminStartAs('benny')" style="width:100%;">Test as Benny Rodriguez</button>
+      </div>
+      <div class="access-actions" style="margin-top:16px;">
+        <button class="btn btn-outline" onclick="closeAccessModal()">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function adminStartAs(partner) {
+  closeAccessModal();
+  isAdminTest = true;
+  startQuestionnaire(partner);
 }
 
 function startQuestionnaire(partner) {
