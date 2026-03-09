@@ -430,6 +430,79 @@ function decodeResults(code) {
   return { partner, answers: answerIndices };
 }
 
+// ─── Build Combined Scorecard Text ───
+function buildScorecardText(dannyAnswers, bennyAnswers) {
+  const dannyScores = calculateScores(dannyAnswers);
+  const bennyScores = calculateScores(bennyAnswers);
+
+  const combined = { factorScores: new Array(FACTORS.length).fill(0), factorCounts: new Array(FACTORS.length).fill(0) };
+  FACTORS.forEach((_, i) => {
+    combined.factorScores[i] = dannyScores.factorScores[i] + bennyScores.factorScores[i];
+    combined.factorCounts[i] = dannyScores.factorCounts[i] + bennyScores.factorCounts[i];
+  });
+  const totalRaw = combined.factorScores.reduce((a, b) => a + b, 0);
+  const normalized = combined.factorScores.map((s, i) =>
+    combined.factorCounts[i] === 0 ? 0 : s / (combined.factorCounts[i] * 2)
+  );
+
+  const maxRaw = QUESTIONS.length * 2 * 2;
+  const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxRaw) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxRaw) * 50) : 50;
+  const fiftyOnePct = 100 - fiftyPct;
+
+  let lines = [];
+  lines.push("═══════════════════════════════════════");
+  lines.push("  COMBINED DECISION SCORECARD");
+  lines.push("  Danny Barcelo & Benny Rodriguez");
+  lines.push("═══════════════════════════════════════");
+  lines.push("");
+  lines.push(`  50/50 Alignment:  ${fiftyPct}%`);
+  lines.push(`  51/49 Alignment:  ${fiftyOnePct}%`);
+  lines.push("");
+  lines.push("───────────────────────────────────────");
+  lines.push("  FACTOR BREAKDOWN");
+  lines.push("───────────────────────────────────────");
+
+  FACTORS.forEach((name, i) => {
+    const norm = normalized[i];
+    let winner;
+    if (norm > 0.1) winner = "→ 50/50";
+    else if (norm < -0.1) winner = "→ 51/49";
+    else winner = "→ Even";
+    const bar50 = Math.round(Math.max(0, norm) * 5);
+    const bar51 = Math.round(Math.max(0, -norm) * 5);
+    lines.push("");
+    lines.push(`  ${name}  ${winner}`);
+    lines.push(`    50/50 ${"█".repeat(bar50)}${"░".repeat(5 - bar50)}  51/49 ${"█".repeat(bar51)}${"░".repeat(5 - bar51)}`);
+  });
+
+  lines.push("");
+  lines.push("───────────────────────────────────────");
+  lines.push("  VERDICT");
+  lines.push("───────────────────────────────────────");
+
+  if (fiftyPct > 58) {
+    lines.push("  Combined responses lean toward 50/50.");
+    lines.push("  The partnership values equal control,");
+    lines.push("  mutual veto power, and shared decisions.");
+  } else if (fiftyOnePct > 58) {
+    lines.push("  Combined responses lean toward 51/49.");
+    lines.push("  The partnership values operational speed,");
+    lines.push("  clear leadership, and agile decisions.");
+  } else {
+    lines.push("  Responses are balanced — either works.");
+    lines.push("  Consider hybrid: 50/50 economics with");
+    lines.push("  51/49 governance (tiebreaker on routine).");
+  }
+
+  lines.push("");
+  lines.push("───────────────────────────────────────");
+  lines.push("  Danny's code: " + encodeResults("danny", dannyAnswers));
+  lines.push("  Benny's code: " + encodeResults("benny", bennyAnswers));
+  lines.push("═══════════════════════════════════════");
+
+  return lines.join("\n");
+}
+
 // ─── Submit ───
 function submitAnswers() {
   if (answers.some(a => a === null)) return;
@@ -437,21 +510,34 @@ function submitAnswers() {
   const scores = calculateScores(answers);
   saveResults(currentPartner, { answers, scores });
 
-  // Encode result code and send via EmailJS
   const resultCode = encodeResults(currentPartner, answers);
   const partnerName = currentPartner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
   const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
 
-  // Send email to Dennis
   if (typeof emailjs !== "undefined") {
+    // Send individual submission email
     emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
       partner_name: partnerName,
       result_code: resultCode,
       timestamp: timestamp,
     }, EMAILJS.publicKey).then(
-      () => console.log("Results emailed successfully."),
+      () => console.log("Individual results emailed."),
       (err) => console.warn("Email send failed:", err)
     );
+
+    // Check if both partners have now submitted — if so, send combined scorecard
+    const both = getBothResults();
+    if (both.danny && both.benny) {
+      const scorecard = buildScorecardText(both.danny.answers, both.benny.answers);
+      emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+        partner_name: "COMBINED SCORECARD",
+        result_code: scorecard,
+        timestamp: timestamp,
+      }, EMAILJS.publicKey).then(
+        () => console.log("Combined scorecard emailed."),
+        (err) => console.warn("Scorecard email failed:", err)
+      );
+    }
   }
 
   showResults();
