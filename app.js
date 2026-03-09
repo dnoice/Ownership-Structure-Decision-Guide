@@ -430,22 +430,70 @@ function closeAccessModal() {
 }
 
 function showAdminPartnerSelect() {
+  // Check current submission status
+  const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
+  const dannyStatus = stored.danny ? "Submitted" : "Not submitted";
+  const bennyStatus = stored.benny ? "Submitted" : "Not submitted";
+  const dannyCount = stored.danny_submission_count || 0;
+  const bennyCount = stored.benny_submission_count || 0;
+
   const overlay = document.createElement("div");
   overlay.id = "access-overlay";
   overlay.innerHTML = `
     <div class="access-modal">
       <h3 class="access-title">Admin Mode</h3>
-      <p class="access-text">Select which partner's questionnaire you'd like to test:</p>
-      <div class="access-actions" style="flex-direction:column; gap:10px; margin-top:16px;">
+
+      <div style="background:var(--light); border-radius:6px; padding:12px; margin-bottom:16px; font-size:.85rem; text-align:left;">
+        <strong style="display:block; margin-bottom:6px;">Submission Status:</strong>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span>Danny Barcelo</span>
+          <span style="color:${stored.danny ? 'var(--gold)' : 'var(--slate)'};">${dannyStatus}${dannyCount ? ' (#' + dannyCount + ')' : ''}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Benny Rodriguez</span>
+          <span style="color:${stored.benny ? 'var(--gold)' : 'var(--slate)'};">${bennyStatus}${bennyCount ? ' (#' + bennyCount + ')' : ''}</span>
+        </div>
+      </div>
+
+      <p class="access-text">Test the questionnaire as:</p>
+      <div class="access-actions" style="flex-direction:column; gap:10px; margin-top:8px;">
         <button class="btn btn-primary" onclick="adminStartAs('danny')" style="width:100%;">Test as Danny Barcelo</button>
         <button class="btn btn-secondary" onclick="adminStartAs('benny')" style="width:100%;">Test as Benny Rodriguez</button>
       </div>
+
+      <div style="border-top:1px solid #ddd; margin-top:20px; padding-top:14px;">
+        <p class="access-text" style="font-size:.8rem; color:var(--slate); margin-bottom:8px;">Reset stored data:</p>
+        <div class="access-actions" style="flex-direction:column; gap:8px;">
+          <button class="btn btn-outline" onclick="adminReset('danny')" style="width:100%; font-size:.8rem;">Reset Danny's Results</button>
+          <button class="btn btn-outline" onclick="adminReset('benny')" style="width:100%; font-size:.8rem;">Reset Benny's Results</button>
+          <button class="btn btn-outline" onclick="adminReset('all')" style="width:100%; font-size:.8rem; color:#c0392b; border-color:#c0392b;">Reset All Data</button>
+        </div>
+      </div>
+
       <div class="access-actions" style="margin-top:16px;">
         <button class="btn btn-outline" onclick="closeAccessModal()">Cancel</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
+}
+
+function adminReset(target) {
+  if (target === "all") {
+    if (!confirm("This will clear ALL stored results for both partners. Are you sure?")) return;
+    localStorage.removeItem("digispace-decision");
+  } else {
+    const name = target === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
+    if (!confirm(`This will clear ${name}'s stored results. Are you sure?`)) return;
+    const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
+    delete stored[target];
+    delete stored[target + "_date"];
+    delete stored[target + "_submission_count"];
+    localStorage.setItem("digispace-decision", JSON.stringify(stored));
+  }
+  // Refresh the admin panel to show updated status
+  closeAccessModal();
+  showAdminPartnerSelect();
 }
 
 function adminStartAs(partner) {
