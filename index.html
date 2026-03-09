@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ownership Structure Decision Guide | digiSpace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="brand">digiSpace</span>
+      <span class="header-sep">|</span>
+      <span class="header-ctx">Ownership Structure Decision Guide</span>
+      <span class="header-sep">|</span>
+      <span class="header-for">Danny Barcelo & Benny Rodriguez</span>
+    </div>
+  </header>
+
+  <!-- ═══ LANDING ═══ -->
+  <section id="landing" class="screen active">
+    <div class="landing-card">
+      <h1 class="logo-text">digiSpace</h1>
+      <p class="logo-sub">— Research & Advisory —</p>
+      <div class="gold-rule"></div>
+      <h2 class="landing-title">50/50 &nbsp;vs.&nbsp; 51/49</h2>
+      <p class="landing-subtitle">Ownership Structure Decision Guide</p>
+      <p class="landing-tagline">Which Split Is Right for Your Farmers Market Venture?</p>
+      <div class="gold-rule"></div>
+      <p class="landing-prepared">Prepared for</p>
+      <p class="landing-clients">Danny Barcelo &nbsp;&amp;&nbsp; Benny Rodriguez</p>
+      <p class="landing-prepared">Author</p>
+      <p class="landing-author">Dennis Smaltz</p>
+      <div class="landing-actions">
+        <button class="btn btn-primary" onclick="selectPartner('danny')">I'm Danny Barcelo</button>
+        <button class="btn btn-secondary" onclick="selectPartner('benny')">I'm Benny Rodriguez</button>
+      </div>
+      <p class="landing-note">Each partner completes the questionnaire independently.<br>Results are combined for the final scorecard.</p>
+    </div>
+  </section>
+
+  <!-- ═══ QUESTIONNAIRE ═══ -->
+  <section id="questionnaire" class="screen">
+    <div class="q-container">
+      <div class="q-header">
+        <h2 id="q-partner-name"></h2>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <p class="progress-text" id="progress-text">Question 1 of 16</p>
+      </div>
+
+      <div id="q-body"></div>
+
+      <div class="q-nav">
+        <button class="btn btn-outline" id="btn-prev" onclick="prevQuestion()" disabled>← Previous</button>
+        <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()">Next →</button>
+        <button class="btn btn-submit" id="btn-submit" onclick="submitAnswers()" style="display:none">Submit My Answers</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ RESULTS ═══ -->
+  <section id="results" class="screen">
+    <div class="results-container">
+      <h2 class="results-title">Decision Scorecard</h2>
+      <p class="results-sub" id="results-sub"></p>
+      <div class="gold-rule"></div>
+
+      <div class="score-summary" id="score-summary"></div>
+
+      <div id="factor-breakdown"></div>
+
+      <div class="verdict-box" id="verdict-box"></div>
+
+      <div class="results-actions">
+        <button class="btn btn-outline" onclick="goHome()">← Back to Start</button>
+        <button class="btn btn-primary" onclick="printResults()">Print / Save PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="site-footer">
+    <p class="footer-sig">︻デ═─── ✦ ✦ ✦ | Aim Twice, Shoot Once!</p>
+    <p class="footer-tag">Precision over Haste &nbsp;•&nbsp; Author: Dennis Smaltz</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
