@@ -977,24 +977,55 @@ function showResults() {
   const strongFifty = insights.filter(f => f.label === "Strong 50/50").map(f => f.factor);
   const strongFiftyOne = insights.filter(f => f.label === "Strong 51/49").map(f => f.factor);
 
+  // Helper: format a list of items with proper English punctuation
+  function formatList(items) {
+    if (items.length === 0) return "";
+    if (items.length === 1) return items[0];
+    if (items.length === 2) return `${items[0]} and ${items[1]}`;
+    return items.slice(0, -1).join(", ") + ", and " + items[items.length - 1];
+  }
+
   const vBox = document.getElementById("verdict-box");
   let verdictClass, verdictTitle, verdictText, verdictDetails;
 
   if (fiftyPct > 58) {
     verdictClass = "fifty";
-    verdictTitle = "Responses lean toward a 50/50 Split";
-    verdictText = `${fiftyFactors.length} of 8 factors favor equal ownership${strongFifty.length > 0 ? `, with strong signals in ${strongFifty.join(" and ")}` : ""}. This partnership values equal control, mutual veto power, and shared decision-making.`;
-    verdictDetails = `<strong>What this means for the agreement:</strong> A 50/50 LLC is the natural fit, but the operating agreement must include a robust deadlock-resolution ladder (negotiation → mediation → binding arbitration → shotgun buy-sell) since every disagreement is a potential impasse.`;
+    const allAlign = fiftyFactors.length === 8;
+    verdictTitle = allAlign
+      ? "Unanimous alignment toward a 50/50 Split"
+      : "Responses lean toward a 50/50 Split";
+    // Build the signal description based on how many strong signals there are
+    let signalNote = "";
+    if (strongFifty.length > 3) {
+      signalNote = ` Strong signals emerged across ${strongFifty.length} factors — notably ${formatList(strongFifty.slice(0, 3))} — indicating deep alignment on equal partnership.`;
+    } else if (strongFifty.length > 0) {
+      signalNote = ` Strong signals in ${formatList(strongFifty)} reinforce this direction.`;
+    }
+    verdictText = allAlign
+      ? `Every factor points toward equal ownership.${signalNote} This partnership consistently values shared control, mutual veto power, and collaborative decision-making.`
+      : `${fiftyFactors.length} of 8 factors favor equal ownership.${signalNote} The overall pattern reflects a partnership built on shared authority and balanced power.`;
+    verdictDetails = `<strong>What this means for the agreement:</strong> A 50/50 LLC is the natural fit. The operating agreement should include a robust deadlock-resolution ladder (negotiation → mediation → binding arbitration → shotgun buy-sell) to ensure disagreements never paralyze the business.`;
   } else if (fiftyOnePct > 58) {
     verdictClass = "fifty-one";
-    verdictTitle = "Responses lean toward a 51/49 Split";
-    verdictText = `${fiftyOneFactors.length} of 8 factors favor majority/minority structure${strongFiftyOne.length > 0 ? `, with strong signals in ${strongFiftyOne.join(" and ")}` : ""}. This partnership values operational speed, clear leadership, and practical decision-making.`;
+    const allAlign = fiftyOneFactors.length === 8;
+    verdictTitle = allAlign
+      ? "Unanimous alignment toward a 51/49 Split"
+      : "Responses lean toward a 51/49 Split";
+    let signalNote = "";
+    if (strongFiftyOne.length > 3) {
+      signalNote = ` Strong signals emerged across ${strongFiftyOne.length} factors — notably ${formatList(strongFiftyOne.slice(0, 3))} — reflecting a clear preference for defined leadership.`;
+    } else if (strongFiftyOne.length > 0) {
+      signalNote = ` Strong signals in ${formatList(strongFiftyOne)} reinforce this direction.`;
+    }
+    verdictText = allAlign
+      ? `Every factor points toward a majority/minority structure.${signalNote} This partnership prioritizes operational efficiency, clear leadership, and agile decision-making.`
+      : `${fiftyOneFactors.length} of 8 factors favor a majority/minority structure.${signalNote} The overall pattern reflects a partnership that values speed and clarity over structural symmetry.`;
     verdictDetails = `<strong>What this means for the agreement:</strong> A 51/49 LLC with robust minority protections — supermajority thresholds on major decisions, information rights, mandatory tax distributions, and a no-discount buyout clause for the 49% partner.`;
   } else {
     verdictClass = "even";
     verdictTitle = "Responses are balanced — consider a hybrid structure";
-    verdictText = `${fiftyFactors.length} factors favor 50/50, ${fiftyOneFactors.length} favor 51/49, and ${neutralFactors.length} are neutral. Neither structure has a clear mandate.`;
-    verdictDetails = `<strong>Recommended hybrid approach:</strong> 50/50 economic split (equal profits and distributions) with 51/49 governance (one partner has tiebreaker authority on routine decisions, but major decisions — debt, new members, dissolution, IP changes — require unanimous consent). This captures the equality both partners value while avoiding deadlock on daily operations.`;
+    verdictText = `The results are split: ${fiftyFactors.length} factors favor 50/50, ${fiftyOneFactors.length} favor 51/49, and ${neutralFactors.length} are neutral. Neither structure holds a clear mandate from the responses.`;
+    verdictDetails = `<strong>Recommended hybrid approach:</strong> 50/50 economic split (equal profits and distributions) paired with 51/49 governance — one partner holds tiebreaker authority on routine decisions, while major decisions (debt, new members, dissolution, IP changes) require unanimous consent. This preserves the equality both partners value while preventing deadlock on daily operations.`;
   }
 
   // Add flags/warnings section if any
