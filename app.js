@@ -434,8 +434,8 @@ function showAdminPartnerSelect() {
   const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
   const dannyStatus = stored.danny ? "Submitted" : "Not submitted";
   const bennyStatus = stored.benny ? "Submitted" : "Not submitted";
-  const dannyCount = stored.danny_submission_count || 0;
-  const bennyCount = stored.benny_submission_count || 0;
+  const dannyCount = stored.danny_count || 0;
+  const bennyCount = stored.benny_count || 0;
 
   const overlay = document.createElement("div");
   overlay.id = "access-overlay";
@@ -471,7 +471,7 @@ function showAdminPartnerSelect() {
       </div>
 
       <div class="access-actions" style="margin-top:16px;">
-        <button class="btn btn-outline" onclick="closeAccessModal()">Cancel</button>
+        <button class="btn btn-outline" onclick="closeAccessModal()">Close</button>
       </div>
     </div>
   `;
@@ -488,7 +488,7 @@ function adminReset(target) {
     const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
     delete stored[target];
     delete stored[target + "_date"];
-    delete stored[target + "_submission_count"];
+    delete stored[target + "_count"];
     localStorage.setItem("digispace-decision", JSON.stringify(stored));
   }
   // Refresh the admin panel to show updated status
