@@ -366,7 +366,7 @@ function selectPartner(partner) {
         ? "Enter your admin code to test the questionnaire. Submissions in this mode are tagged as test runs and do not affect client results."
         : `Enter your personal access code to continue as <strong>${name}</strong>.`
       }</p>
-      <input type="text" id="access-input" class="access-input" placeholder="Enter access code" maxlength="10" autocomplete="off">
+      <input type="text" id="access-input" class="access-input ${isAdmin ? 'access-input--admin' : ''}" placeholder="Enter access code" ${isAdmin ? '' : 'maxlength="10"'} autocomplete="off">
       <p class="access-error" id="access-error"></p>
       <div class="access-actions">
         <button class="btn btn-outline" onclick="closeAccessModal()">Cancel</button>
@@ -393,10 +393,11 @@ function selectPartner(partner) {
 function verifyCode(partner) {
   const input = document.getElementById("access-input");
   const error = document.getElementById("access-error");
-  const code = input.value.trim().toUpperCase();
+  const isAdmin = partner === "admin";
+  const code = isAdmin ? input.value.trim() : input.value.trim().toUpperCase();
 
-  if (partner === "admin") {
-    const btn = document.querySelector("#access-modal .btn-primary");
+  if (isAdmin) {
+    const btn = document.querySelector("#access-overlay .btn-primary");
     btn.disabled = true;
     btn.textContent = "Verifying…";
     fetch("/api/verify", {

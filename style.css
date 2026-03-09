@@ -655,6 +655,10 @@ body {
   outline: none;
   transition: border-color .2s;
 }
+.access-input--admin {
+  text-transform: none;
+  letter-spacing: 1px;
+}
 .access-input:focus {
   border-color: var(--navy);
 }
