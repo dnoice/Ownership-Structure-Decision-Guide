@@ -222,6 +222,26 @@ body {
   background: #245a40;
 }
 
+/* Admin entry */
+.admin-entry {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--divider);
+}
+.btn-admin {
+  background: transparent;
+  color: var(--slate);
+  border: 1px dashed var(--divider);
+  font-size: .75rem;
+  padding: 6px 16px;
+  opacity: .6;
+  transition: opacity .2s;
+}
+.btn-admin:hover {
+  opacity: 1;
+  border-color: var(--slate);
+}
+
 /* ─── QUESTIONNAIRE ─── */
 #questionnaire {
   flex-direction: column;
@@ -450,6 +470,89 @@ body {
   margin-top: 8px;
   font-style: italic;
   line-height: 1.4;
+}
+
+/* Factor flag/warning */
+.factor-flag {
+  font-size: .78rem;
+  color: var(--red);
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: rgba(139, 58, 58, .06);
+  border-left: 3px solid var(--red);
+  border-radius: 2px;
+  line-height: 1.4;
+}
+
+/* Agreement tags */
+.agreement-tag {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.agreement-tag.agree {
+  background: var(--green-light);
+  color: var(--green);
+}
+.agreement-tag.partial {
+  background: #FFF8E1;
+  color: var(--accent);
+}
+.agreement-tag.disagree {
+  background: rgba(139, 58, 58, .1);
+  color: var(--red);
+}
+
+/* Verdict details & flags */
+.verdict-details {
+  font-size: .9rem;
+  color: var(--charcoal);
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 12px auto 0;
+  text-align: left;
+}
+.verdict-agreement {
+  font-size: .9rem;
+  color: var(--slate);
+  margin-top: 14px;
+}
+.verdict-flags {
+  text-align: left;
+  max-width: 600px;
+  margin: 16px auto 0;
+  padding: 14px 18px;
+  background: rgba(139, 58, 58, .05);
+  border: 1px solid rgba(139, 58, 58, .15);
+  border-radius: 4px;
+  font-size: .85rem;
+  line-height: 1.5;
+  color: var(--charcoal);
+}
+.verdict-flags ul {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+.verdict-flags li {
+  margin-bottom: 4px;
+}
+
+/* Retake overlay reuses access-modal styles */
+#retake-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 42, 74, .6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
 /* Verdict box */

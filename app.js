@@ -202,21 +202,96 @@ const FACTORS = [
   "Trust & Relationship"
 ];
 
-// Factor explanations for results
-const FACTOR_NOTES = {
-  0: { fifty: "Both partners must agree on everything — maximum fairness, maximum deadlock risk.", fiftyOne: "The 51% member breaks ties on routine decisions — faster operations, less gridlock." },
-  1: { fifty: "Built-in veto power for both partners. The structure itself is the protection.", fiftyOne: "The 49% member must negotiate supermajority protections into the agreement." },
-  2: { fifty: "Deadlock resolution is the operative heart of the entire agreement.", fiftyOne: "Deadlock is rarer — the business continues operating while major disputes are resolved." },
-  3: { fifty: "Equal veto protects IP naturally. Neither partner can unilaterally control recipes.", fiftyOne: "Recipe creator should LICENSE (not assign) to the LLC for protection." },
-  4: { fifty: "Neither partner can starve the other of distributions. Equal financial control.", fiftyOne: "Mandatory tax distributions and unanimity on compensation changes are non-negotiable." },
-  5: { fifty: "Pro-rata buyout with no minority discount. Clean and equal.", fiftyOne: "The 49% member's interest may be subject to minority/marketability discounts." },
-  6: { fifty: "Shared responsibility for permits and compliance.", fiftyOne: "Managing member takes point on regulatory matters — clearer chain of responsibility." },
-  7: { fifty: "Works best with high trust, equal contributions, and both partners equally active.", fiftyOne: "Better when contributions are asymmetric or one partner is the primary operator." },
+// Factor insight generators — return specific text based on actual answer patterns
+// Each function receives (norm, answerIndices, questionIndices) where norm is -1 to +1
+const FACTOR_INSIGHTS = {
+  0: (norm, answers, qis) => {
+    const q0 = answers[qis[0]]; // routine decisions
+    const q1 = answers[qis[1]]; // deadlock concern
+    if (norm > 0.5) return { label: "Strong 50/50", detail: "Both responses favor joint decision-making. This partnership wants consensus on everything — a 50/50 structure with a robust deadlock clause is essential.", flag: null };
+    if (norm > 0.1) return { label: "Leans 50/50", detail: "Preference for shared decisions, but some openness to tiebreakers. A 50/50 with a managing-member carve-out for small routine calls could work.", flag: null };
+    if (norm < -0.5) return { label: "Strong 51/49", detail: "Clear preference for one partner to handle daily operations and break ties. Supermajority protections for the 49% partner are critical here.", flag: q1 === 2 ? "High deadlock concern — tiebreaker authority is important to this respondent." : null };
+    if (norm < -0.1) return { label: "Leans 51/49", detail: "Comfort with delegated authority on routine matters. The operating agreement should clearly define which decisions require unanimity vs. managing-member authority.", flag: null };
+    return { label: "Neutral", detail: "Mixed signals — comfortable with shared control but also sees value in clear leadership. A hybrid approach (50/50 economics, 51/49 governance) may fit best.", flag: null };
+  },
+  1: (norm, answers, qis) => {
+    const q0 = answers[qis[0]]; // veto importance
+    const q1 = answers[qis[1]]; // comfort with unequal control
+    if (norm > 0.5) return { label: "Strong 50/50", detail: "Veto power and equal control are non-negotiable. This respondent would be uncomfortable in a minority position without structural equality.", flag: q1 === 0 ? "Equal control was explicitly marked as non-negotiable." : null };
+    if (norm > 0.1) return { label: "Leans 50/50", detail: "Values protections but shows some flexibility. Strong supermajority provisions could satisfy this partner's needs in either structure.", flag: null };
+    if (norm < -0.5) return { label: "Strong 51/49", detail: "Trust-based approach — comfortable with unequal formal control as long as the business runs smoothly. Less concerned about structural power.", flag: null };
+    if (norm < -0.1) return { label: "Leans 51/49", detail: "Would accept unequal governance if protections are written in. Key provisions: supermajority thresholds on major decisions, information rights, anti-dilution.", flag: null };
+    return { label: "Neutral", detail: "Wants protections but isn't rigid about how they're delivered. Either structure works with proper drafting.", flag: null };
+  },
+  2: (norm, answers, qis) => {
+    const q0 = answers[qis[0]]; // impasse resolution preference
+    if (q0 === 0) return { label: norm >= 0 ? "Leans 50/50" : "Neutral", detail: "Prefers informal resolution — believes the partnership can talk through disagreements. In a 50/50, this confidence is essential but the agreement should still have a formal escalation ladder as backup.", flag: "Relying solely on good communication is risky. The agreement must include mediation → arbitration → buy-sell regardless." };
+    if (q0 === 1) return { label: "Structure-aware", detail: "Wants a formal escalation process (mediation → arbitration → buy-sell). This is the correct approach for either structure, but is particularly critical in a 50/50 where deadlocks can paralyze the business.", flag: null };
+    return { label: "Leans 51/49", detail: "Wants to avoid deadlocks entirely by having a clear tiebreaker. This strongly suggests 51/49 governance where the managing member can break routine ties while major decisions still require both.", flag: null };
+  },
+  3: (norm, answers, qis) => {
+    const q0 = answers[qis[0]]; // IP contributor
+    const q1 = answers[qis[1]]; // IP exit handling
+    const isCreator = q0 === 0;
+    const retainIP = q1 === 0;
+    if (isCreator && retainIP) return { label: "Strong 50/50", detail: "This respondent is the recipe creator AND wants to retain full ownership. In a 50/50, equal veto power naturally protects IP. In a 51/49, a license-not-assign model is non-negotiable.", flag: "IP ownership is a high-stakes factor. The operating agreement must explicitly address recipe ownership, licensing terms, and post-departure rights." };
+    if (isCreator) return { label: "Leans 50/50", detail: "Recipe creator who is somewhat flexible on exit provisions. Either structure works, but the license model should be included regardless to protect the creator's interests.", flag: null };
+    if (norm > 0.1) return { label: "Leans 50/50", detail: "Values IP protection and equal say over how recipes are used. A 50/50 gives both partners automatic blocking rights over IP decisions.", flag: null };
+    if (norm < -0.1) return { label: "Leans 51/49", detail: "Less concerned about IP control — trusts the agreement to handle it. The license-not-assign model should still be used to protect the recipe creator.", flag: null };
+    return { label: "Neutral", detail: "Joint recipe development or standard recipes. IP is less of a differentiating factor — either structure works with proper IP provisions.", flag: null };
+  },
+  4: (norm, answers, qis) => {
+    const q0 = answers[qis[0]]; // profit split preference
+    const q1 = answers[qis[1]]; // phantom income concern
+    if (q0 === 0 && q1 === 0) return { label: "Strong 50/50", detail: "Wants exactly equal profits AND is concerned about phantom income. A 50/50 with mandatory tax distributions and equal quarterly distributions is the cleanest fit.", flag: "Phantom income concern means the agreement MUST include mandatory tax distributions at the highest marginal rate." };
+    if (q0 === 0) return { label: "Leans 50/50", detail: "Prefers equal profit sharing. Note: this is achievable in either structure — a 51/49 can still distribute profits 50/50 (the 'hybrid' model).", flag: null };
+    if (q0 === 1) return { label: "Leans 51/49", detail: "Comfortable with proportional profit sharing based on ownership percentage. In a 51/49, this means the majority member receives slightly more.", flag: null };
+    if (norm < -0.1) return { label: "Leans 51/49", detail: "Prefers contribution-based compensation and is comfortable with profit reinvestment. This flexibility supports a 51/49 where the managing member has more discretion on distributions.", flag: null };
+    return { label: "Neutral", detail: "Flexible on profit distribution. The key takeaway: regardless of structure, mandatory tax distributions and a clear distribution schedule should be in the agreement.", flag: q1 === 0 ? "Phantom income concern noted — include mandatory tax distribution clause." : null };
+  },
+  5: (norm, answers, qis) => {
+    const q0 = answers[qis[0]]; // buyout valuation
+    const q1 = answers[qis[1]]; // dissolution protection
+    if (q0 === 0 && q1 === 0) return { label: "Strong 50/50", detail: "Wants pro-rata buyout with no minority discount AND strong dissolution protections. A 50/50 delivers both by design — neither partner's interest can be discounted.", flag: null };
+    if (q0 === 0) return { label: "Leans 50/50", detail: "Pro-rata valuation preference. In a 51/49, the agreement must explicitly waive minority/marketability discounts to achieve the same fairness.", flag: "If going 51/49: include a 'no-discount' clause for buyouts to protect the minority partner." };
+    if (norm < -0.5) return { label: "Strong 51/49", detail: "Comfortable with standard market valuations and flexible on dissolution. This respondent prioritizes business continuity over structural protections.", flag: null };
+    if (norm < -0.1) return { label: "Leans 51/49", detail: "Pragmatic on exit. Either structure works, but dissolution threshold should still require unanimity regardless.", flag: null };
+    return { label: "Neutral", detail: "Trusts an independent appraiser for valuation. Either structure works — the buy-sell provisions are what matter most, not the ownership split.", flag: null };
+  },
+  6: (norm, answers, qis) => {
+    const q0 = answers[qis[0]]; // regulatory responsibility
+    if (q0 === 0) return { label: "Leans 50/50", detail: "Prefers shared regulatory responsibility. Both structures face identical permit/compliance requirements — the difference is who takes point.", flag: null };
+    if (q0 === 1) return { label: "Leans 51/49", detail: "Wants the active operator to handle permits and compliance. This aligns with 51/49 where the managing member naturally owns regulatory responsibility.", flag: "Santa Monica vendor permits are non-transferable and personal. Both partners should be listed regardless of structure." };
+    return { label: "Neutral", detail: "Indifferent on who handles compliance — just wants clear designation. Either structure works; the Regulatory Compliance Officer role should be defined in the agreement.", flag: null };
+  },
+  7: (norm, answers, qis) => {
+    const q0 = answers[qis[0]]; // trust level
+    const q1 = answers[qis[1]]; // contribution equality
+    const q2 = answers[qis[2]]; // operational activity
+    const highTrust = q0 === 0;
+    const equalContrib = q1 === 0;
+    const equalActive = q2 === 0;
+    if (highTrust && equalContrib && equalActive) return { label: "Strong 50/50", detail: "Complete trust, equal contributions, equal operational involvement — this is the textbook case for a 50/50 split.", flag: null };
+    if (norm > 0.3) return { label: "Leans 50/50", detail: "High trust and mostly equal partnership dynamics. A 50/50 structure reflects the relationship reality.", flag: null };
+    if (q2 === 2) return { label: "Strong 51/49", detail: "One partner is clearly the full-time operator while the other is more passive. A 51/49 with the operator as managing member aligns governance with day-to-day reality.", flag: "Asymmetric involvement is the strongest predictor of 51/49 suitability." };
+    if (norm < -0.3) return { label: "Leans 51/49", detail: "Growing trust or unequal contributions suggest the partnership is still developing. A 51/49 with strong protections provides structure while the relationship matures.", flag: q0 === 2 ? "Trust is still developing — the agreement should include more guardrails (regular meetings, detailed reporting, approval thresholds)." : null };
+    return { label: "Neutral", detail: "Mixed relationship signals. The partnership has elements that support both structures. Key question: will both partners be equally involved day-to-day?", flag: null };
+  },
 };
+
+// Helper: get question indices belonging to each factor
+function getFactorQuestionIndices() {
+  const map = {};
+  QUESTIONS.forEach((q, qi) => {
+    if (!map[q.factor]) map[q.factor] = [];
+    map[q.factor].push(qi);
+  });
+  return map;
+}
 
 // ─── EmailJS Configuration ───
 const EMAILJS = {
-  serviceId: "service_aq3hvcj",
+  serviceId: "service_wabtt69",
   templateId: "template_7mektik",
   publicKey: "130PuCIb_6PfT82tZ",
 };
@@ -226,19 +301,29 @@ const EMAILJS = {
 const ACCESS_CODES = {
   danny: "DB2026",
   benny: "BR2026",
+  admin: "DS2026",
 };
 
 // ─── State ───
 let currentPartner = "";
 let currentQ = 0;
 let answers = new Array(QUESTIONS.length).fill(null);
+let isAdminTest = false;
 
 // ─── Local Storage ───
 function saveResults(partner, data) {
   const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
+  // Increment submission count
+  const countKey = partner + "_count";
+  stored[countKey] = (stored[countKey] || 0) + 1;
   stored[partner] = data;
   stored[partner + "_date"] = new Date().toISOString();
   localStorage.setItem("digispace-decision", JSON.stringify(stored));
+}
+
+function getSubmissionCount(partner) {
+  const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
+  return stored[partner + "_count"] || 0;
 }
 
 function getResults(partner) {
@@ -251,6 +336,14 @@ function getBothResults() {
   return { danny: stored.danny || null, benny: stored.benny || null };
 }
 
+function clearResults(partner) {
+  const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
+  delete stored[partner];
+  delete stored[partner + "_date"];
+  // Keep the count — we want the running total
+  localStorage.setItem("digispace-decision", JSON.stringify(stored));
+}
+
 // ─── Screen Management ───
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
@@ -260,22 +353,43 @@ function showScreen(id) {
 
 // ─── Partner Selection (with access code verification) ───
 function selectPartner(partner) {
-  const name = partner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
+  const names = { danny: "Danny Barcelo", benny: "Benny Rodriguez", admin: "Admin / Test Mode" };
+  const name = names[partner] || partner;
+  const isAdmin = partner === "admin";
 
   // Show access code modal
   const overlay = document.createElement("div");
   overlay.id = "access-overlay";
   overlay.innerHTML = `
     <div class="access-modal">
-      <h3 class="access-title">Identity Verification</h3>
-      <p class="access-text">Enter your personal access code to continue as <strong>${name}</strong>.</p>
+      <h3 class="access-title">${isAdmin ? "Admin Access" : "Identity Verification"}</h3>
+      <p class="access-text">${isAdmin
+        ? "Enter your admin code to test the questionnaire. Submissions in this mode are tagged as test runs and do not affect client results."
+        : `Enter your personal access code to continue as <strong>${name}</strong>.`
+      }</p>
+      ${isAdmin ? `
+        <p class="access-text" style="margin-top:8px; font-size:.85rem; color:var(--slate);">
+          <strong>Test as:</strong>
+        </p>
+        <div class="access-actions" style="margin-bottom:12px; justify-content:center;">
+          <label style="font-size:.85rem; cursor:pointer; margin-right:16px;">
+            <input type="radio" name="admin-as" value="danny" checked> Danny
+          </label>
+          <label style="font-size:.85rem; cursor:pointer;">
+            <input type="radio" name="admin-as" value="benny"> Benny
+          </label>
+        </div>
+      ` : ""}
       <input type="text" id="access-input" class="access-input" placeholder="Enter access code" maxlength="10" autocomplete="off">
       <p class="access-error" id="access-error"></p>
       <div class="access-actions">
         <button class="btn btn-outline" onclick="closeAccessModal()">Cancel</button>
         <button class="btn btn-primary" onclick="verifyCode('${partner}')">Verify</button>
       </div>
-      <p class="access-hint">Your access code was provided by Dennis Smaltz.<br>Contact him if you don't have it.</p>
+      <p class="access-hint">${isAdmin
+        ? "Use your admin code (DS2026)."
+        : "Your access code was provided by Dennis Smaltz.<br>Contact him if you don't have it."
+      }</p>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -295,8 +409,25 @@ function verifyCode(partner) {
   const error = document.getElementById("access-error");
   const code = input.value.trim().toUpperCase();
 
+  if (partner === "admin") {
+    if (code === ACCESS_CODES.admin.toUpperCase()) {
+      // Determine which partner to test as
+      const radioEl = document.querySelector('input[name="admin-as"]:checked');
+      const testAs = radioEl ? radioEl.value : "danny";
+      closeAccessModal();
+      isAdminTest = true;
+      startQuestionnaire(testAs);
+    } else {
+      error.textContent = "Incorrect admin code.";
+      input.value = "";
+      input.focus();
+    }
+    return;
+  }
+
   if (code === ACCESS_CODES[partner].toUpperCase()) {
     closeAccessModal();
+    isAdminTest = false;
     startQuestionnaire(partner);
   } else if (code === ACCESS_CODES[partner === "danny" ? "benny" : "danny"].toUpperCase()) {
     error.textContent = "That code belongs to the other partner. Please use your own access code.";
@@ -315,6 +446,34 @@ function closeAccessModal() {
 }
 
 function startQuestionnaire(partner) {
+  const existing = getResults(partner);
+  const name = partner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
+
+  if (existing) {
+    // Partner already submitted — confirm retake
+    const count = getSubmissionCount(partner);
+    const overlay = document.createElement("div");
+    overlay.id = "retake-overlay";
+    overlay.innerHTML = `
+      <div class="access-modal">
+        <h3 class="access-title">Retake Questionnaire?</h3>
+        <p class="access-text"><strong>${name}</strong>, you've already submitted (${count} submission${count !== 1 ? "s" : ""} on record).</p>
+        <p class="access-text" style="margin-top:8px;">Starting over will <strong>replace</strong> your previous answers. Only your latest submission will count.</p>
+        <div class="access-actions">
+          <button class="btn btn-outline" onclick="document.getElementById('retake-overlay').remove()">Cancel</button>
+          <button class="btn btn-primary" onclick="document.getElementById('retake-overlay').remove(); beginFresh('${partner}')">Start Fresh</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    return;
+  }
+
+  beginFresh(partner);
+}
+
+function beginFresh(partner) {
+  clearResults(partner);
   currentPartner = partner;
   currentQ = 0;
   answers = new Array(QUESTIONS.length).fill(null);
@@ -434,6 +593,7 @@ function decodeResults(code) {
 function buildScorecardText(dannyAnswers, bennyAnswers) {
   const dannyScores = calculateScores(dannyAnswers);
   const bennyScores = calculateScores(bennyAnswers);
+  const fqMap = getFactorQuestionIndices();
 
   const combined = { factorScores: new Array(FACTORS.length).fill(0), factorCounts: new Array(FACTORS.length).fill(0) };
   FACTORS.forEach((_, i) => {
@@ -450,55 +610,106 @@ function buildScorecardText(dannyAnswers, bennyAnswers) {
   const fiftyOnePct = 100 - fiftyPct;
 
   let lines = [];
-  lines.push("═══════════════════════════════════════");
+  lines.push("═══════════════════════════════════════════════");
   lines.push("  COMBINED DECISION SCORECARD");
   lines.push("  Danny Barcelo & Benny Rodriguez");
-  lines.push("═══════════════════════════════════════");
+  lines.push("═══════════════════════════════════════════════");
   lines.push("");
   lines.push(`  50/50 Alignment:  ${fiftyPct}%`);
   lines.push(`  51/49 Alignment:  ${fiftyOnePct}%`);
   lines.push("");
-  lines.push("───────────────────────────────────────");
-  lines.push("  FACTOR BREAKDOWN");
-  lines.push("───────────────────────────────────────");
+  lines.push("───────────────────────────────────────────────");
+  lines.push("  FACTOR-BY-FACTOR ANALYSIS");
+  lines.push("───────────────────────────────────────────────");
+
+  const allFlags = [];
 
   FACTORS.forEach((name, i) => {
     const norm = normalized[i];
-    let winner;
-    if (norm > 0.1) winner = "→ 50/50";
-    else if (norm < -0.1) winner = "→ 51/49";
-    else winner = "→ Even";
+    const insight = FACTOR_INSIGHTS[i](norm, dannyAnswers, fqMap[i]);
     const bar50 = Math.round(Math.max(0, norm) * 5);
     const bar51 = Math.round(Math.max(0, -norm) * 5);
+
+    // Agreement check
+    const dNorm = dannyScores.factorCounts[i] > 0 ? dannyScores.factorScores[i] / (dannyScores.factorCounts[i] * 2) : 0;
+    const bNorm = bennyScores.factorCounts[i] > 0 ? bennyScores.factorScores[i] / (bennyScores.factorCounts[i] * 2) : 0;
+    const sameDir = (dNorm > 0.1 && bNorm > 0.1) || (dNorm < -0.1 && bNorm < -0.1) || (Math.abs(dNorm) <= 0.1 && Math.abs(bNorm) <= 0.1);
+    const agreeTag = sameDir ? "[AGREE]" : "[DIVERGE]";
+
     lines.push("");
-    lines.push(`  ${name}  ${winner}`);
+    lines.push(`  ${name}  →  ${insight.label}  ${agreeTag}`);
     lines.push(`    50/50 ${"█".repeat(bar50)}${"░".repeat(5 - bar50)}  51/49 ${"█".repeat(bar51)}${"░".repeat(5 - bar51)}`);
+    lines.push(`    ${insight.detail}`);
+    if (insight.flag) {
+      lines.push(`    ⚠ ${insight.flag}`);
+      allFlags.push({ factor: name, flag: insight.flag });
+    }
+    if (!sameDir) {
+      lines.push(`    ⚠ Partners diverge on this factor — discuss before deciding.`);
+      allFlags.push({ factor: name, flag: "Danny and Benny answered differently." });
+    }
   });
 
+  // Tally
+  const insights = FACTORS.map((name, i) => FACTOR_INSIGHTS[i](normalized[i], dannyAnswers, fqMap[i]));
+  const fiftyCount = insights.filter(f => f.label.includes("50/50")).length;
+  const fiftyOneCount = insights.filter(f => f.label.includes("51/49")).length;
+  const neutralCount = FACTORS.length - fiftyCount - fiftyOneCount;
+  const agreeCount = FACTORS.filter((_, i) => {
+    const dN = dannyScores.factorCounts[i] > 0 ? dannyScores.factorScores[i] / (dannyScores.factorCounts[i] * 2) : 0;
+    const bN = bennyScores.factorCounts[i] > 0 ? bennyScores.factorScores[i] / (bennyScores.factorCounts[i] * 2) : 0;
+    return (dN > 0.1 && bN > 0.1) || (dN < -0.1 && bN < -0.1) || (Math.abs(dN) <= 0.1 && Math.abs(bN) <= 0.1);
+  }).length;
+
   lines.push("");
-  lines.push("───────────────────────────────────────");
+  lines.push("───────────────────────────────────────────────");
+  lines.push("  SUMMARY");
+  lines.push("───────────────────────────────────────────────");
+  lines.push(`  Factors favoring 50/50:  ${fiftyCount}`);
+  lines.push(`  Factors favoring 51/49:  ${fiftyOneCount}`);
+  lines.push(`  Neutral factors:         ${neutralCount}`);
+  lines.push(`  Partner agreement:       ${agreeCount} of 8 factors`);
+
+  lines.push("");
+  lines.push("───────────────────────────────────────────────");
   lines.push("  VERDICT");
-  lines.push("───────────────────────────────────────");
+  lines.push("───────────────────────────────────────────────");
 
   if (fiftyPct > 58) {
-    lines.push("  Combined responses lean toward 50/50.");
+    lines.push(`  ${fiftyCount} of 8 factors favor 50/50.`);
     lines.push("  The partnership values equal control,");
     lines.push("  mutual veto power, and shared decisions.");
+    lines.push("  → Recommend 50/50 LLC with robust deadlock");
+    lines.push("    resolution ladder in operating agreement.");
   } else if (fiftyOnePct > 58) {
-    lines.push("  Combined responses lean toward 51/49.");
+    lines.push(`  ${fiftyOneCount} of 8 factors favor 51/49.`);
     lines.push("  The partnership values operational speed,");
     lines.push("  clear leadership, and agile decisions.");
+    lines.push("  → Recommend 51/49 LLC with supermajority");
+    lines.push("    protections for the minority partner.");
   } else {
-    lines.push("  Responses are balanced — either works.");
-    lines.push("  Consider hybrid: 50/50 economics with");
-    lines.push("  51/49 governance (tiebreaker on routine).");
+    lines.push("  Responses are balanced — neither structure");
+    lines.push("  has a clear mandate.");
+    lines.push("  → Recommend hybrid: 50/50 economics with");
+    lines.push("    51/49 governance (tiebreaker on routine,");
+    lines.push("    unanimity on major decisions).");
+  }
+
+  if (allFlags.length > 0) {
+    lines.push("");
+    lines.push("───────────────────────────────────────────────");
+    lines.push("  KEY CONSIDERATIONS");
+    lines.push("───────────────────────────────────────────────");
+    allFlags.forEach(f => {
+      lines.push(`  • ${f.factor}: ${f.flag}`);
+    });
   }
 
   lines.push("");
-  lines.push("───────────────────────────────────────");
+  lines.push("───────────────────────────────────────────────");
   lines.push("  Danny's code: " + encodeResults("danny", dannyAnswers));
   lines.push("  Benny's code: " + encodeResults("benny", bennyAnswers));
-  lines.push("═══════════════════════════════════════");
+  lines.push("═══════════════════════════════════════════════");
 
   return lines.join("\n");
 }
@@ -508,16 +719,42 @@ function submitAnswers() {
   if (answers.some(a => a === null)) return;
 
   const scores = calculateScores(answers);
-  saveResults(currentPartner, { answers, scores });
-
-  const resultCode = encodeResults(currentPartner, answers);
   const partnerName = currentPartner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
   const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
 
+  if (isAdminTest) {
+    // Admin test — don't save to real localStorage, email tagged as TEST
+    const resultCode = encodeResults(currentPartner, answers);
+    if (typeof emailjs !== "undefined") {
+      emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+        partner_name: `[ADMIN TEST] as ${partnerName}`,
+        result_code: resultCode,
+        timestamp: timestamp,
+      }, EMAILJS.publicKey).then(
+        () => console.log("Admin test results emailed."),
+        (err) => console.warn("Email send failed:", err)
+      );
+    }
+    // Save temporarily so showResults works, but under a test key
+    const testData = { answers, scores };
+    const stored = JSON.parse(localStorage.getItem("digispace-decision") || "{}");
+    stored["_test_" + currentPartner] = testData;
+    localStorage.setItem("digispace-decision", JSON.stringify(stored));
+    showResults();
+    return;
+  }
+
+  // Real submission
+  saveResults(currentPartner, { answers, scores });
+
+  const resultCode = encodeResults(currentPartner, answers);
+  const count = getSubmissionCount(currentPartner);
+  const attemptTag = `Submission #${count}${count > 1 ? " (retake)" : ""}`;
+
   if (typeof emailjs !== "undefined") {
-    // Send individual submission email
+    // Send individual submission email — includes attempt number
     emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
-      partner_name: partnerName,
+      partner_name: `${partnerName}  [${attemptTag}]`,
       result_code: resultCode,
       timestamp: timestamp,
     }, EMAILJS.publicKey).then(
@@ -528,10 +765,13 @@ function submitAnswers() {
     // Check if both partners have now submitted — if so, send combined scorecard
     const both = getBothResults();
     if (both.danny && both.benny) {
+      const dannyCount = getSubmissionCount("danny");
+      const bennyCount = getSubmissionCount("benny");
       const scorecard = buildScorecardText(both.danny.answers, both.benny.answers);
+      const scorecardWithMeta = `Danny: Submission #${dannyCount}  |  Benny: Submission #${bennyCount}\n\n${scorecard}`;
       emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
         partner_name: "COMBINED SCORECARD",
-        result_code: scorecard,
+        result_code: scorecardWithMeta,
         timestamp: timestamp,
       }, EMAILJS.publicKey).then(
         () => console.log("Combined scorecard emailed."),
@@ -547,31 +787,33 @@ function submitAnswers() {
 function showResults() {
   const both = getBothResults();
   const hasBoth = both.danny && both.benny;
+  const fqMap = getFactorQuestionIndices();
 
+  // Determine which answers to analyze
+  let activeAnswers; // the answer set used for insight generation
   let combinedScores;
   let subtitle;
 
   if (hasBoth) {
-    // Combine both partners' scores
-    const allAnswers = [...both.danny.answers, ...both.benny.answers];
-    // Re-calculate with combined factor scores
     const combined = { factorScores: new Array(FACTORS.length).fill(0), normalized: [] };
     FACTORS.forEach((_, i) => {
       combined.factorScores[i] = both.danny.scores.factorScores[i] + both.benny.scores.factorScores[i];
     });
     const totalRaw = combined.factorScores.reduce((a, b) => a + b, 0);
-    const maxPossible = QUESTIONS.length * 2 * 2; // 2 partners, max 2 per question
     combined.normalized = combined.factorScores.map((s, i) => {
       const count = (both.danny.scores.factorCounts[i] + both.benny.scores.factorCounts[i]);
       return count === 0 ? 0 : s / (count * 2);
     });
     combinedScores = { ...combined, totalRaw };
+    // For insights, average the answer indices (we'll pass danny's for pattern detection)
+    activeAnswers = both.danny.answers;
     subtitle = "Combined results for Danny Barcelo & Benny Rodriguez";
   } else {
     const partner = both.danny ? "danny" : "benny";
     const name = partner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
     const other = partner === "danny" ? "Benny Rodriguez" : "Danny Barcelo";
     combinedScores = both[partner].scores;
+    activeAnswers = both[partner].answers;
     subtitle = `Results for ${name} — waiting for ${other} to complete their questionnaire`;
   }
 
@@ -596,62 +838,122 @@ function showResults() {
     </div>
   `;
 
-  // Factor breakdown
+  // Factor breakdown — now with granular insights
   const breakdown = document.getElementById("factor-breakdown");
+  const insights = []; // collect for verdict narrative
+  const flags = []; // collect flags/warnings
+
   breakdown.innerHTML = FACTORS.map((name, i) => {
-    const norm = combinedScores.normalized[i]; // -1 to +1
+    const norm = combinedScores.normalized[i];
     const fiftyW = Math.max(0, norm);
     const fiftyOneW = Math.max(0, -norm);
     const total = fiftyW + fiftyOneW || 1;
     const fiftyBar = (fiftyW / total) * 100;
     const fiftyOneBar = (fiftyOneW / total) * 100;
 
-    let winnerClass, winnerLabel;
-    if (norm > 0.1) { winnerClass = "fifty"; winnerLabel = "50/50"; }
-    else if (norm < -0.1) { winnerClass = "fifty-one"; winnerLabel = "51/49"; }
-    else { winnerClass = "even"; winnerLabel = "Even"; }
+    // Get granular insight from factor function
+    const insight = FACTOR_INSIGHTS[i](norm, activeAnswers, fqMap[i]);
+    insights.push({ factor: name, ...insight, norm });
+    if (insight.flag) flags.push({ factor: name, flag: insight.flag });
 
-    const note = norm > 0.1 ? FACTOR_NOTES[i].fifty :
-                 norm < -0.1 ? FACTOR_NOTES[i].fiftyOne :
-                 "Your responses suggest either structure works for this factor.";
+    let winnerClass;
+    if (insight.label.includes("50/50")) winnerClass = "fifty";
+    else if (insight.label.includes("51/49")) winnerClass = "fifty-one";
+    else winnerClass = "even";
+
+    // Agreement analysis for combined results
+    let agreementHtml = "";
+    if (hasBoth) {
+      const dScore = both.danny.scores.factorScores[i];
+      const bScore = both.benny.scores.factorScores[i];
+      const dNorm = both.danny.scores.factorCounts[i] > 0 ? dScore / (both.danny.scores.factorCounts[i] * 2) : 0;
+      const bNorm = both.benny.scores.factorCounts[i] > 0 ? bScore / (both.benny.scores.factorCounts[i] * 2) : 0;
+      const sameDirection = (dNorm > 0.1 && bNorm > 0.1) || (dNorm < -0.1 && bNorm < -0.1) || (Math.abs(dNorm) <= 0.1 && Math.abs(bNorm) <= 0.1);
+      const divergence = Math.abs(dNorm - bNorm);
+
+      if (sameDirection && divergence < 0.3) {
+        agreementHtml = `<span class="agreement-tag agree">Partners agree</span>`;
+      } else if (sameDirection) {
+        agreementHtml = `<span class="agreement-tag partial">Partners mostly agree</span>`;
+      } else {
+        agreementHtml = `<span class="agreement-tag disagree">Partners diverge</span>`;
+        flags.push({ factor: name, flag: `Danny and Benny answered differently on ${name} — discuss this factor before deciding.` });
+      }
+    }
 
     return `
       <div class="factor-card">
         <div class="factor-header">
           <span class="factor-name">${name}</span>
-          <span class="factor-winner ${winnerClass}">${winnerLabel}</span>
+          <span class="factor-winner ${winnerClass}">${insight.label}</span>
+          ${agreementHtml}
         </div>
         <div class="factor-bar">
           <div class="bar-fifty" style="width: ${fiftyBar}%"></div>
           <div class="bar-fifty-one" style="width: ${fiftyOneBar}%"></div>
         </div>
-        <p class="factor-note">${note}</p>
+        <p class="factor-note">${insight.detail}</p>
+        ${insight.flag ? `<p class="factor-flag">${insight.flag}</p>` : ""}
       </div>
     `;
   }).join("");
 
-  // Verdict
+  // Build narrative verdict based on factor insights
+  const fiftyFactors = insights.filter(f => f.label.includes("50/50")).map(f => f.factor);
+  const fiftyOneFactors = insights.filter(f => f.label.includes("51/49")).map(f => f.factor);
+  const neutralFactors = insights.filter(f => !f.label.includes("50/50") && !f.label.includes("51/49")).map(f => f.factor);
+  const strongFifty = insights.filter(f => f.label === "Strong 50/50").map(f => f.factor);
+  const strongFiftyOne = insights.filter(f => f.label === "Strong 51/49").map(f => f.factor);
+
   const vBox = document.getElementById("verdict-box");
-  let verdictClass, verdictTitle, verdictText;
+  let verdictClass, verdictTitle, verdictText, verdictDetails;
 
   if (fiftyPct > 58) {
     verdictClass = "fifty";
-    verdictTitle = "Your responses lean toward a 50/50 Split";
-    verdictText = "Based on your answers, you value equal control, mutual veto power, and shared decision-making. A 50/50 LLC with a strong deadlock-resolution clause and detailed operating agreement would align with your partnership preferences.";
+    verdictTitle = "Responses lean toward a 50/50 Split";
+    verdictText = `${fiftyFactors.length} of 8 factors favor equal ownership${strongFifty.length > 0 ? `, with strong signals in ${strongFifty.join(" and ")}` : ""}. This partnership values equal control, mutual veto power, and shared decision-making.`;
+    verdictDetails = `<strong>What this means for the agreement:</strong> A 50/50 LLC is the natural fit, but the operating agreement must include a robust deadlock-resolution ladder (negotiation → mediation → binding arbitration → shotgun buy-sell) since every disagreement is a potential impasse.`;
   } else if (fiftyOnePct > 58) {
     verdictClass = "fifty-one";
-    verdictTitle = "Your responses lean toward a 51/49 Split";
-    verdictText = "Based on your answers, you value operational speed, clear leadership, and practical decision-making. A 51/49 LLC with robust supermajority protections for the minority partner would align with your partnership preferences.";
+    verdictTitle = "Responses lean toward a 51/49 Split";
+    verdictText = `${fiftyOneFactors.length} of 8 factors favor majority/minority structure${strongFiftyOne.length > 0 ? `, with strong signals in ${strongFiftyOne.join(" and ")}` : ""}. This partnership values operational speed, clear leadership, and practical decision-making.`;
+    verdictDetails = `<strong>What this means for the agreement:</strong> A 51/49 LLC with robust minority protections — supermajority thresholds on major decisions, information rights, mandatory tax distributions, and a no-discount buyout clause for the 49% partner.`;
   } else {
     verdictClass = "even";
-    verdictTitle = "Your responses suggest either structure could work";
-    verdictText = "Your answers are balanced between both structures. Consider the hybrid option: 50/50 economic split (equal profits) with 51/49 governance (one partner has tiebreaker on routine decisions, but major decisions require both). This captures the best of both worlds.";
+    verdictTitle = "Responses are balanced — consider a hybrid structure";
+    verdictText = `${fiftyFactors.length} factors favor 50/50, ${fiftyOneFactors.length} favor 51/49, and ${neutralFactors.length} are neutral. Neither structure has a clear mandate.`;
+    verdictDetails = `<strong>Recommended hybrid approach:</strong> 50/50 economic split (equal profits and distributions) with 51/49 governance (one partner has tiebreaker authority on routine decisions, but major decisions — debt, new members, dissolution, IP changes — require unanimous consent). This captures the equality both partners value while avoiding deadlock on daily operations.`;
+  }
+
+  // Add flags/warnings section if any
+  let flagsHtml = "";
+  if (flags.length > 0) {
+    flagsHtml = `
+      <div class="verdict-flags">
+        <strong>Key considerations:</strong>
+        <ul>${flags.map(f => `<li><strong>${f.factor}:</strong> ${f.flag}</li>`).join("")}</ul>
+      </div>
+    `;
+  }
+
+  // Agreement summary for combined results
+  let agreementSummary = "";
+  if (hasBoth) {
+    const agreeCount = insights.filter((_, i) => {
+      const dN = both.danny.scores.factorCounts[i] > 0 ? both.danny.scores.factorScores[i] / (both.danny.scores.factorCounts[i] * 2) : 0;
+      const bN = both.benny.scores.factorCounts[i] > 0 ? both.benny.scores.factorScores[i] / (both.benny.scores.factorCounts[i] * 2) : 0;
+      return (dN > 0.1 && bN > 0.1) || (dN < -0.1 && bN < -0.1) || (Math.abs(dN) <= 0.1 && Math.abs(bN) <= 0.1);
+    }).length;
+    agreementSummary = `<p class="verdict-agreement">Partner alignment: Danny and Benny agree on <strong>${agreeCount} of 8</strong> factors.</p>`;
   }
 
   vBox.className = `verdict-box ${verdictClass}`;
   vBox.innerHTML = `
     <h3 class="verdict-heading">${verdictTitle}</h3>
     <p class="verdict-text">${verdictText}</p>
+    <p class="verdict-details">${verdictDetails}</p>
+    ${agreementSummary}
+    ${flagsHtml}
     <p class="verdict-disclaimer">This is a decision-support tool, not legal advice. Consult with independent legal counsel before finalizing your ownership structure.</p>
   `;
 
