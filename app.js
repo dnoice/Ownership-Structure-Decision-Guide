@@ -214,6 +214,13 @@ const FACTOR_NOTES = {
   7: { fifty: "Works best with high trust, equal contributions, and both partners equally active.", fiftyOne: "Better when contributions are asymmetric or one partner is the primary operator." },
 };
 
+// ─── Access Codes ───
+// Each partner has a unique access code to prevent cross-access
+const ACCESS_CODES = {
+  danny: "DB2026",
+  benny: "BR2026",
+};
+
 // ─── State ───
 let currentPartner = "";
 let currentQ = 0;
@@ -244,8 +251,63 @@ function showScreen(id) {
   window.scrollTo(0, 0);
 }
 
-// ─── Partner Selection ───
+// ─── Partner Selection (with access code verification) ───
 function selectPartner(partner) {
+  const name = partner === "danny" ? "Danny Barcelo" : "Benny Rodriguez";
+
+  // Show access code modal
+  const overlay = document.createElement("div");
+  overlay.id = "access-overlay";
+  overlay.innerHTML = `
+    <div class="access-modal">
+      <h3 class="access-title">Identity Verification</h3>
+      <p class="access-text">Enter your personal access code to continue as <strong>${name}</strong>.</p>
+      <input type="text" id="access-input" class="access-input" placeholder="Enter access code" maxlength="10" autocomplete="off">
+      <p class="access-error" id="access-error"></p>
+      <div class="access-actions">
+        <button class="btn btn-outline" onclick="closeAccessModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="verifyCode('${partner}')">Verify</button>
+      </div>
+      <p class="access-hint">Your access code was provided by Dennis Smaltz.<br>Contact him if you don't have it.</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Focus input and allow Enter key
+  setTimeout(() => {
+    const input = document.getElementById("access-input");
+    input.focus();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") verifyCode(partner);
+    });
+  }, 50);
+}
+
+function verifyCode(partner) {
+  const input = document.getElementById("access-input");
+  const error = document.getElementById("access-error");
+  const code = input.value.trim().toUpperCase();
+
+  if (code === ACCESS_CODES[partner].toUpperCase()) {
+    closeAccessModal();
+    startQuestionnaire(partner);
+  } else if (code === ACCESS_CODES[partner === "danny" ? "benny" : "danny"].toUpperCase()) {
+    error.textContent = "That code belongs to the other partner. Please use your own access code.";
+    input.value = "";
+    input.focus();
+  } else {
+    error.textContent = "Incorrect access code. Please try again.";
+    input.value = "";
+    input.focus();
+  }
+}
+
+function closeAccessModal() {
+  const overlay = document.getElementById("access-overlay");
+  if (overlay) overlay.remove();
+}
+
+function startQuestionnaire(partner) {
   currentPartner = partner;
   currentQ = 0;
   answers = new Array(QUESTIONS.length).fill(null);

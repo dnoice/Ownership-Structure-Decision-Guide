@@ -502,6 +502,79 @@ body {
   flex-wrap: wrap;
 }
 
+/* ─── ACCESS CODE MODAL ─── */
+#access-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 42, 74, .6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+.access-modal {
+  background: var(--white);
+  border: 1px solid var(--divider);
+  border-top: 4px solid var(--gold);
+  border-radius: 4px;
+  padding: 36px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(27,42,74,.25);
+}
+.access-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+.access-text {
+  font-size: .9rem;
+  color: var(--slate);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.access-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  text-align: center;
+  text-transform: uppercase;
+  border: 2px solid var(--divider);
+  border-radius: 3px;
+  outline: none;
+  transition: border-color .2s;
+}
+.access-input:focus {
+  border-color: var(--navy);
+}
+.access-error {
+  font-size: .8rem;
+  color: var(--red);
+  margin-top: 8px;
+  min-height: 1.2em;
+}
+.access-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.access-hint {
+  font-size: .75rem;
+  color: var(--accent);
+  font-style: italic;
+  margin-top: 16px;
+  line-height: 1.4;
+}
+
 /* ─── RESPONSIVE ─── */
 @media (max-width: 600px) {
   .landing-card { padding: 40px 24px; }
