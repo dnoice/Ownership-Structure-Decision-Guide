@@ -301,7 +301,6 @@ const EMAILJS = {
 const ACCESS_CODES = {
   danny: "DB2026",
   benny: "BR2026",
-  admin: "DS2026",
 };
 
 // ─── State ───
@@ -397,15 +396,32 @@ function verifyCode(partner) {
   const code = input.value.trim().toUpperCase();
 
   if (partner === "admin") {
-    if (code === ACCESS_CODES.admin.toUpperCase()) {
-      // Code verified — now show partner selection
-      closeAccessModal();
-      showAdminPartnerSelect();
-    } else {
-      error.textContent = "Incorrect admin code.";
-      input.value = "";
-      input.focus();
-    }
+    const btn = document.querySelector("#access-modal .btn-primary");
+    btn.disabled = true;
+    btn.textContent = "Verifying…";
+    fetch("/api/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: input.value.trim() }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        btn.disabled = false;
+        btn.textContent = "Verify";
+        if (data.valid) {
+          closeAccessModal();
+          showAdminPartnerSelect();
+        } else {
+          error.textContent = "Incorrect admin code.";
+          input.value = "";
+          input.focus();
+        }
+      })
+      .catch(() => {
+        btn.disabled = false;
+        btn.textContent = "Verify";
+        error.textContent = "Verification failed. Check your connection.";
+      });
     return;
   }
 
