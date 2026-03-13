@@ -3,11 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    if (location.hostname === 'dnoice.github.io') {
+      location.replace('https://ownership-decision-guide.vercel.app' + location.pathname.replace('/Ownership-Structure-Decision-Guide', '') + location.search + location.hash);
+    }
+  </script>
   <title>Admin — Decision Scorecard | digiSpace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/results.css">
+  <link rel="stylesheet" href="css/print.css">
   <style>
     .admin-container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
     .admin-title { font-family: var(--font-display); font-size: 1.8rem; color: var(--navy); text-align: center; margin-bottom: 8px; }
@@ -28,8 +38,8 @@
     .admin-lock-text { color: var(--slate); font-size: .9rem; margin-bottom: 20px; }
     .admin-lock input {
       padding: 12px 16px; font-family: var(--font-mono); font-size: 1.1rem;
-      letter-spacing: 3px; text-align: center; text-transform: uppercase;
-      border: 2px solid var(--divider); border-radius: 3px; outline: none; width: 240px;
+      letter-spacing: 1px; text-align: center;
+      border: 2px solid var(--divider); border-radius: 3px; outline: none; width: 280px;
     }
     .admin-lock input:focus { border-color: var(--navy); }
     .admin-lock .code-error { display: block; margin-top: 8px; }
@@ -51,14 +61,14 @@
 
   <div class="admin-container">
 
-    <!-- Admin Access Gate -->
+    <!-- Admin Access Gate (server-side verification) -->
     <div id="admin-gate" class="admin-lock">
       <h2 class="admin-lock-title">Admin Access</h2>
       <p class="admin-lock-text">Enter the admin code to view the combined scorecard.</p>
-      <input type="password" id="admin-code" placeholder="Admin code" maxlength="20">
+      <input type="password" id="admin-code" placeholder="Admin code" autocomplete="off">
       <p class="code-error" id="admin-gate-error"></p>
       <div style="margin-top: 16px;">
-        <button class="btn btn-primary" onclick="unlockAdmin()">Unlock</button>
+        <button class="btn btn-primary" id="btn-unlock">Unlock</button>
       </div>
     </div>
 
@@ -81,7 +91,7 @@
       </div>
 
       <div class="admin-actions">
-        <button class="btn btn-primary" onclick="generateScorecard()">Generate Combined Scorecard</button>
+        <button class="btn btn-primary" id="btn-generate">Generate Combined Scorecard</button>
       </div>
 
       <div id="admin-results">
@@ -102,28 +112,53 @@
     <p class="footer-tag">Precision over Haste &nbsp;•&nbsp; Author: Dennis Smaltz</p>
   </footer>
 
-  <script src="app.js"></script>
-  <script>
-    // Admin access code
-    const ADMIN_CODE = "DS2026";
+  <script type="module">
+    import { QUESTIONS, FACTORS, FACTOR_INSIGHTS } from './js/config.js';
+    import { decodeResults, calculateScores, getFactorQuestionIndices, getConviction } from './js/scoring.js';
+
+    const fqMap = getFactorQuestionIndices();
+
+    // Server-side admin verification
+    document.getElementById("btn-unlock").addEventListener("click", unlockAdmin);
+    document.getElementById("admin-code").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") unlockAdmin();
+    });
 
     function unlockAdmin() {
       const input = document.getElementById("admin-code");
       const error = document.getElementById("admin-gate-error");
-      if (input.value.trim().toUpperCase() === ADMIN_CODE) {
-        document.getElementById("admin-gate").style.display = "none";
-        document.getElementById("admin-content").style.display = "block";
-      } else {
-        error.textContent = "Incorrect admin code.";
-        input.value = "";
-        input.focus();
-      }
+      const btn = document.getElementById("btn-unlock");
+
+      btn.disabled = true;
+      btn.textContent = "Verifying…";
+
+      fetch("/api/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: input.value.trim() }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          btn.disabled = false;
+          btn.textContent = "Unlock";
+          if (data.valid) {
+            document.getElementById("admin-gate").style.display = "none";
+            document.getElementById("admin-content").style.display = "block";
+          } else {
+            error.textContent = "Incorrect admin code.";
+            input.value = "";
+            input.focus();
+          }
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.textContent = "Unlock";
+          error.textContent = "Verification failed. Check your connection.";
+        });
     }
 
-    // Allow Enter key on admin gate
-    document.getElementById("admin-code").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") unlockAdmin();
-    });
+    // Generate scorecard from pasted result codes
+    document.getElementById("btn-generate").addEventListener("click", generateScorecard);
 
     function generateScorecard() {
       const dannyCode = document.getElementById("code-danny").value.trim().toUpperCase();
@@ -133,7 +168,6 @@
       errD.textContent = "";
       errB.textContent = "";
 
-      // Decode
       const dannyData = decodeResults(dannyCode);
       const bennyData = decodeResults(bennyCode);
 
@@ -148,11 +182,9 @@
       }
       if (hasError) return;
 
-      // Calculate individual scores
       const dannyScores = calculateScores(dannyData.answers);
       const bennyScores = calculateScores(bennyData.answers);
 
-      // Combine
       const combined = { factorScores: new Array(FACTORS.length).fill(0), factorCounts: new Array(FACTORS.length).fill(0), normalized: [] };
       FACTORS.forEach((_, i) => {
         combined.factorScores[i] = dannyScores.factorScores[i] + bennyScores.factorScores[i];
@@ -167,7 +199,7 @@
       const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxRaw) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxRaw) * 50) : 50;
       const fiftyOnePct = 100 - fiftyPct;
 
-      // Render score summary
+      // Score summary
       document.getElementById("admin-score-summary").innerHTML = `
         <div class="score-block fifty">
           <div class="score-label">50/50 Split</div>
@@ -181,7 +213,7 @@
         </div>
       `;
 
-      // Factor breakdown
+      // Factor breakdown with insights
       document.getElementById("admin-factor-breakdown").innerHTML = FACTORS.map((name, i) => {
         const norm = combined.normalized[i];
         const fiftyW = Math.max(0, norm);
@@ -189,47 +221,57 @@
         const total = fiftyW + fiftyOneW || 1;
         const fiftyBar = (fiftyW / total) * 100;
         const fiftyOneBar = (fiftyOneW / total) * 100;
+        const conviction = getConviction(norm);
+        const insight = FACTOR_INSIGHTS[i](norm, dannyData.answers, fqMap[i]);
 
-        let winnerClass, winnerLabel;
-        if (norm > 0.1) { winnerClass = "fifty"; winnerLabel = "50/50"; }
-        else if (norm < -0.1) { winnerClass = "fifty-one"; winnerLabel = "51/49"; }
-        else { winnerClass = "even"; winnerLabel = "Even"; }
-
-        const note = norm > 0.1 ? FACTOR_NOTES[i].fifty :
-                     norm < -0.1 ? FACTOR_NOTES[i].fiftyOne :
-                     "Both partners' responses suggest either structure works for this factor.";
+        let winnerClass;
+        if (insight.label.includes("50/50")) winnerClass = "fifty";
+        else if (insight.label.includes("51/49")) winnerClass = "fifty-one";
+        else winnerClass = "even";
 
         return `
           <div class="factor-card">
             <div class="factor-header">
               <span class="factor-name">${name}</span>
-              <span class="factor-winner ${winnerClass}">${winnerLabel}</span>
+              <div class="factor-tags">
+                <span class="factor-winner ${winnerClass}">${insight.label}</span>
+                <span class="factor-conviction ${conviction.css}">${conviction.level}</span>
+              </div>
             </div>
             <div class="factor-bar">
               <div class="bar-fifty" style="width: ${fiftyBar}%"></div>
               <div class="bar-fifty-one" style="width: ${fiftyOneBar}%"></div>
             </div>
-            <p class="factor-note">${note}</p>
+            <p class="factor-note">${insight.detail}</p>
+            ${insight.flag ? `<p class="factor-flag">${insight.flag}</p>` : ""}
           </div>
         `;
       }).join("");
 
-      // Verdict
+      // Verdict (5-tier)
       const vBox = document.getElementById("admin-verdict-box");
       let verdictClass, verdictTitle, verdictText;
 
-      if (fiftyPct > 58) {
+      if (fiftyPct >= 65) {
         verdictClass = "fifty";
-        verdictTitle = "Combined responses lean toward a 50/50 Split";
-        verdictText = "Based on both partners' answers, the partnership values equal control, mutual veto power, and shared decision-making. A 50/50 LLC with a strong deadlock-resolution clause and detailed operating agreement would align with the partnership's preferences.";
-      } else if (fiftyOnePct > 58) {
+        verdictTitle = "Strong alignment toward a 50/50 Split";
+        verdictText = "Both partners' answers consistently favor equal control, mutual veto power, and shared decision-making. A 50/50 LLC with a robust deadlock-resolution ladder is the natural fit.";
+      } else if (fiftyPct > 55) {
+        verdictClass = "fifty";
+        verdictTitle = "Responses lean toward a 50/50 Split";
+        verdictText = "The partnership values shared control with some openness to delegated authority. A 50/50 LLC with a managing-member carve-out for routine decisions would be a good fit.";
+      } else if (fiftyOnePct >= 65) {
         verdictClass = "fifty-one";
-        verdictTitle = "Combined responses lean toward a 51/49 Split";
-        verdictText = "Based on both partners' answers, the partnership values operational speed, clear leadership, and practical decision-making. A 51/49 LLC with robust supermajority protections for the minority partner would align with the partnership's preferences.";
+        verdictTitle = "Strong alignment toward a 51/49 Split";
+        verdictText = "Both partners' answers consistently favor operational efficiency and clear leadership. A 51/49 LLC with robust supermajority protections for the minority partner is the natural fit.";
+      } else if (fiftyOnePct > 55) {
+        verdictClass = "fifty-one";
+        verdictTitle = "Responses lean toward a 51/49 Split";
+        verdictText = "The partnership values operational efficiency while wanting to preserve shared ownership. A 51/49 LLC with strong minority protections and defined managing-member scope would be a good fit.";
       } else {
         verdictClass = "even";
-        verdictTitle = "Combined responses suggest either structure could work";
-        verdictText = "Both partners' answers are balanced between both structures. Consider the hybrid option: 50/50 economic split (equal profits) with 51/49 governance (one partner has tiebreaker on routine decisions, but major decisions require both). This captures the best of both worlds.";
+        verdictTitle = "Balanced — consider a hybrid structure";
+        verdictText = "Both partners' answers are balanced between structures. Consider the hybrid: 50/50 economic split with 51/49 governance — one partner has tiebreaker on routine decisions, major decisions require unanimity.";
       }
 
       vBox.className = `verdict-box ${verdictClass}`;
@@ -243,5 +285,6 @@
       document.getElementById("admin-results").scrollIntoView({ behavior: "smooth" });
     }
   </script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

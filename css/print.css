@@ -1,0 +1,33 @@
+/* ═══════════════════════════════════════
+   Print — Optimized for PDF export
+   ═══════════════════════════════════════ */
+
+@media print {
+  .site-header, .site-footer, .q-nav, .results-actions, .btn { display: none !important; }
+  .screen { display: none !important; }
+  #results { display: flex !important; }
+  body { background: white; }
+  .factor-card, .pattern-card, .risk-card, .alignment-card { break-inside: avoid; }
+  .drill-toggle, .q-learn-more-toggle { display: none !important; }
+  .drill-content, .q-learn-more-content { display: block !important; }
+  .verdict-box { break-inside: avoid; }
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 600px) {
+  .landing-card { padding: 40px 24px; }
+  .logo-text { font-size: 2.2rem; }
+  .landing-title { font-size: 1.8rem; }
+  .landing-actions { flex-direction: column; }
+  .btn { width: 100%; }
+  .q-card { padding: 20px; }
+  .score-summary { gap: 16px; }
+  .score-block { min-width: 140px; padding: 18px 24px; }
+  .factor-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .factor-tags { margin-top: 4px; }
+  .partner-breakdown { flex-direction: column; gap: 6px; }
+  .risk-grid { grid-template-columns: 1fr; }
+  .pattern-severity { margin-left: 0; }
+  .alignment-header { flex-direction: column; align-items: flex-start; }
+  .alignment-score { font-size: 1.4rem; }
+}

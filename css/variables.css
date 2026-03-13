@@ -1,0 +1,24 @@
+/* ═══════════════════════════════════════
+   digiSpace — Design Tokens
+   Navy / Gold / Slate palette
+   ═══════════════════════════════════════ */
+
+:root {
+  --navy: #1B2A4A;
+  --gold: #C9A84C;
+  --slate: #3D4F5F;
+  --light: #F4F1EB;
+  --white: #FFFFFF;
+  --charcoal: #2C2C2C;
+  --accent: #8B6F47;
+  --red: #8B3A3A;
+  --divider: #D4C5A9;
+  --green: #2E6B4F;
+  --green-light: #E8F5E9;
+  --blue-light: #E3EDF7;
+  --orange: #C67A2E;
+  --orange-light: #FFF3E0;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Source Serif 4', 'Palatino Linotype', serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+}
