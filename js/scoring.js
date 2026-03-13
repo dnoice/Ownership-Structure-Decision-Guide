@@ -219,7 +219,7 @@ export function detectPatterns(answerIndices, normalized) {
     patterns.push({
       name: "Distribution Priority",
       icon: "💰",
-      description: "Wants equal profits AND is concerned about phantom income. The operating agreement <strong>must include</strong>: (1) mandatory quarterly tax distributions at the highest marginal rate (~50.3% for CA), (2) equal profit distributions on a defined schedule, and (3) a minimum cash reserve threshold before distributions can be withheld.",
+      description: "Wants equal profits AND is concerned about phantom income. The operating agreement <strong>must include</strong>: (1) mandatory quarterly tax distributions at the highest marginal rate (~50.3% for CA), reduced by any PTE tax already paid at entity level, (2) equal profit distributions on a defined schedule, (3) a minimum cash reserve threshold before distributions can be withheld, and (4) authorization for the PTE Elective Tax (SB 132, 9.3%) to bypass the federal SALT cap.",
       severity: "info",
       factors: ["Compensation & Distributions"]
     });

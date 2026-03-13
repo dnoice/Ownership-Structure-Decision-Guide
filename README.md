@@ -22,7 +22,7 @@ The tool is a conversation starter, not a legal recommendation. It is designed t
 ## The 8 Comparison Factors
 
 | # | Factor | What It Evaluates |
-|---|--------|-------------------|
+| --- | -------- | ------------------- |
 | 1 | **Decision-Making Authority** | How routine and major decisions are made; deadlock risk |
 | 2 | **Partner Protections** | Veto power, risk of oppression, fiduciary duties |
 | 3 | **Deadlock Resolution** | How impasses are resolved; business continuity during disputes |
@@ -39,7 +39,7 @@ The tool is a conversation starter, not a legal recommendation. It is designed t
 The interactive tool distills findings from four comprehensive legal research reports and a unified decision guide. PDF copies are available in the [`reports/`](reports/) directory:
 
 | Report | Description |
-|--------|-------------|
+| -------- | ------------- |
 | [50/50 vs. 51/49 Decision Guide](reports/50-50%20vs.%2051-49%20Decision%20Guide.pdf) | Side-by-side comparison with visual scorecard across all 8 factors |
 | [50/50 Joint Venture Research Report](reports/50-50%20Joint%20Venture%20Research%20Report.pdf) | Full research on equal-split LLC/GP structures under California law |
 | [50/50 Works Cited Matrix](reports/50-50%20Joint%20Venture%20Research%20Report%20Works%20Cited%20Matrix.pdf) | 90-source reference matrix for the 50/50 report |
