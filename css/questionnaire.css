@@ -59,18 +59,17 @@
 }
 .q-card .q-text {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   color: var(--navy);
   font-weight: 600;
   line-height: 1.5;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 .q-card .q-context {
-  font-size: .85rem;
+  font-size: .9rem;
   color: var(--slate);
-  font-style: italic;
   margin-bottom: 20px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* Radio options */
@@ -101,8 +100,9 @@
   flex-shrink: 0;
 }
 .q-option-label {
-  font-size: .9rem;
+  font-size: .95rem;
   color: var(--charcoal);
+  line-height: 1.5;
 }
 .q-option-label strong {
   color: var(--navy);
@@ -146,8 +146,8 @@
   background: var(--blue-light);
   border-left: 3px solid var(--navy);
   border-radius: 2px;
-  font-size: .82rem;
-  line-height: 1.6;
+  font-size: .88rem;
+  line-height: 1.65;
   color: var(--charcoal);
   animation: slideDown .2s ease;
 }

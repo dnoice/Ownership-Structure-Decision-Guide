@@ -19,6 +19,6 @@
   --orange: #C67A2E;
   --orange-light: #FFF3E0;
   --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Source Serif 4', 'Palatino Linotype', serif;
+  --font-body: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Consolas', monospace;
 }

@@ -41,11 +41,10 @@
   margin-bottom: 4px;
 }
 .section-sub {
-  font-size: .8rem;
+  font-size: .85rem;
   color: var(--accent);
-  font-style: italic;
   margin-bottom: 16px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 /* ─── Score Summary ─── */
@@ -145,11 +144,10 @@
   color: var(--accent);
 }
 .alignment-detail {
-  font-size: .82rem;
+  font-size: .85rem;
   color: var(--slate);
   margin-top: 8px;
-  line-height: 1.5;
-  font-style: italic;
+  line-height: 1.55;
 }
 
 /* ─── Factor Cards ─── */
@@ -204,11 +202,10 @@
   transition: width .6s ease;
 }
 .factor-note {
-  font-size: .8rem;
-  color: var(--accent);
+  font-size: .85rem;
+  color: var(--slate);
   margin-top: 8px;
-  font-style: italic;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 .factor-flag {
   font-size: .78rem;
@@ -279,9 +276,8 @@
 .partner-dir.fifty-one { color: var(--orange); background: var(--orange-light); }
 .partner-dir.even { color: var(--slate); background: var(--light); }
 .partner-conv {
-  font-size: .68rem;
+  font-size: .72rem;
   color: var(--accent);
-  font-style: italic;
 }
 
 /* ─── Drill-Down (Question Detail) ─── */
@@ -387,14 +383,13 @@
 .severity-positive { background: var(--green-light); color: var(--green); }
 .severity-info { background: var(--blue-light); color: var(--navy); }
 .pattern-detail {
-  font-size: .82rem;
+  font-size: .88rem;
   color: var(--charcoal);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .pattern-factors {
-  font-size: .72rem;
+  font-size: .76rem;
   color: var(--accent);
-  font-style: italic;
   margin-top: 6px;
 }
 
@@ -449,10 +444,10 @@
 .risk-fill-moderate { background: var(--gold); }
 .risk-fill-high { background: var(--red); }
 .risk-detail {
-  font-size: .78rem;
+  font-size: .85rem;
   color: var(--slate);
   margin-top: 8px;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 /* ─── Verdict Box ─── */
@@ -509,8 +504,8 @@
 .verdict-flags ul { margin: 6px 0 0 18px; padding: 0; }
 .verdict-flags li { margin-bottom: 4px; }
 .verdict-disclaimer {
-  font-size: .8rem;
+  font-size: .82rem;
   color: var(--accent);
-  font-style: italic;
   margin-top: 16px;
+  opacity: .8;
 }
