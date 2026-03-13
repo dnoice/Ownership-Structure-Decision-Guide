@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════ */
 
 import { QUESTIONS, FACTORS, FACTOR_INSIGHTS } from './config.js';
-import { calculateScores, encodeResults, getFactorQuestionIndices, getConviction, calculateAlignment, detectPatterns, assessRisks } from './scoring.js';
+import { calculateScores, encodeResults, getFactorQuestionIndices, getConviction, getScoreBounds, calculateAlignment, detectPatterns, assessRisks } from './scoring.js';
 import { getBothResults } from './storage.js';
 import { state } from './app.js';
 import { showScreen } from './app.js';
@@ -64,8 +64,11 @@ export function showResults() {
 
   // Score summary blocks
   const totalRaw = combinedScores.totalRaw;
-  const maxRaw = hasBoth ? QUESTIONS.length * 2 * 2 : QUESTIONS.length * 2;
-  const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxRaw) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxRaw) * 50) : 50;
+  const bounds = getScoreBounds();
+  const multiplier = hasBoth ? 2 : 1;
+  const maxPos = bounds.maxPositive * multiplier;
+  const maxNeg = Math.abs(bounds.maxNegative) * multiplier;
+  const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxPos) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxNeg) * 50) : 50;
   const fiftyOnePct = 100 - fiftyPct;
 
   document.getElementById("score-summary").innerHTML = `
@@ -445,8 +448,10 @@ export function buildScorecardText(dannyAnswers, bennyAnswers) {
     combined.factorCounts[i] === 0 ? 0 : s / (combined.factorCounts[i] * 2)
   );
 
-  const maxRaw = QUESTIONS.length * 2 * 2;
-  const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxRaw) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxRaw) * 50) : 50;
+  const bounds = getScoreBounds();
+  const maxPos = bounds.maxPositive * 2;
+  const maxNeg = Math.abs(bounds.maxNegative) * 2;
+  const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxPos) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxNeg) * 50) : 50;
   const fiftyOnePct = 100 - fiftyPct;
 
   // Partnership alignment

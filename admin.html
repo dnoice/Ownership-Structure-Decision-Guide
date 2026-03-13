@@ -114,7 +114,7 @@
 
   <script type="module">
     import { QUESTIONS, FACTORS, FACTOR_INSIGHTS } from './js/config.js';
-    import { decodeResults, calculateScores, getFactorQuestionIndices, getConviction } from './js/scoring.js';
+    import { decodeResults, calculateScores, getFactorQuestionIndices, getConviction, getScoreBounds } from './js/scoring.js';
 
     const fqMap = getFactorQuestionIndices();
 
@@ -195,8 +195,10 @@
         return combined.factorCounts[i] === 0 ? 0 : s / (combined.factorCounts[i] * 2);
       });
 
-      const maxRaw = QUESTIONS.length * 2 * 2;
-      const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxRaw) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxRaw) * 50) : 50;
+      const bounds = getScoreBounds();
+      const maxPos = bounds.maxPositive * 2;
+      const maxNeg = Math.abs(bounds.maxNegative) * 2;
+      const fiftyPct = totalRaw > 0 ? Math.round(((totalRaw / maxPos) * 50) + 50) : totalRaw < 0 ? Math.round(50 - (Math.abs(totalRaw) / maxNeg) * 50) : 50;
       const fiftyOnePct = 100 - fiftyPct;
 
       // Score summary

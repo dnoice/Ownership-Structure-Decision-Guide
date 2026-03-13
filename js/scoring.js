@@ -24,6 +24,17 @@ export function getConviction(norm) {
   return { level: "Neutral", intensity: 0, css: "conviction-neutral" };
 }
 
+// Compute actual max positive and max negative raw scores from question data
+export function getScoreBounds() {
+  let maxPositive = 0, maxNegative = 0;
+  QUESTIONS.forEach(q => {
+    const scores = q.options.map(o => o.score);
+    maxPositive += Math.max(...scores);
+    maxNegative += Math.min(...scores);
+  });
+  return { maxPositive, maxNegative };
+}
+
 // ─── Scoring ───
 export function calculateScores(answerIndices) {
   // Per-factor scores
